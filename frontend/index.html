@@ -3,243 +3,227 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Signalpost | Corporate Intelligence Agent</title>
-  <link rel="stylesheet" href="/static/style.css?v=20261004-polish" />
+  <meta name="description" content="Evidence-first company intelligence for Norwegian businesses. Research company facts, verify claims and trace them to their sources with Signalpost." />
+  <title>SIGNALPOST | Company intelligence, backed by evidence</title>
+  <link rel="stylesheet" href="/static/style.css?v=20261004-editorial" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="navbar">
-      <div class="brand">
-        <div class="logo-icon" aria-hidden="true">S</div>
-        <div>
-          <h1>Signalpost</h1>
-          <p class="tagline">Norwegian company intelligence</p>
-        </div>
+  <div class="announcement-bar">Evidence-first company intelligence for Norwegian businesses</div>
+  <header class="site-header">
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="wordmark" href="#top" aria-label="Signalpost home">SIGNALPOST</a>
+      <div class="nav-links">
+        <a href="#product">Product</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#evidence">Evidence</a>
+        <a href="#about">About</a>
       </div>
-      <div class="system-status" id="system-status">
-        <span class="status-dot"></span>
-        <span id="status-text">Connecting...</span>
-      </div>
-    </header>
+      <a class="nav-cta" href="#research">Research company <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
 
-    <section class="search-section" aria-label="Company research controls">
-      <div class="search-box">
-        <label for="company-input">Research a Norwegian company</label>
-        <div class="input-group">
-          <input
-            type="text"
-            id="company-input"
-            placeholder="Organization number (9 digits)"
-            maxlength="15"
-            autocomplete="off"
-          />
-          <button id="btn-research" class="btn btn-primary">
-            <span>Research company</span>
-          </button>
-          <button id="btn-refresh" class="btn btn-secondary" title="Re-research and detect changes">
-            <span>Refresh</span>
-          </button>
-          <button id="btn-history" class="btn btn-outline" title="View change history">
-            <span>History</span>
-          </button>
+  <main id="top" class="site-main">
+    <section class="hero" aria-labelledby="hero-title">
+      <p class="hero-kicker"><span></span> Norwegian company research, made verifiable</p>
+      <h1 id="hero-title">Company intelligence,<br />backed by evidence.</h1>
+      <p class="hero-copy">Enter a Norwegian organisation number. Signalpost researches the company, verifies key facts, resolves conflicting information, and shows the evidence behind every result.</p>
+      <div class="hero-actions">
+        <a class="hero-button hero-button-primary" href="#research">Research a company <span aria-hidden="true">→</span></a>
+        <a class="hero-button hero-button-secondary" href="#how-it-works">How it works</a>
+      </div>
+      <p class="hero-note">Registry records <span>·</span> Public sources <span>·</span> Traceable claims</p>
+
+      <section id="product" class="product-preview" aria-label="Illustrative Signalpost company report preview">
+        <div class="preview-topbar">
+          <div class="preview-window-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <span>COMPANY REPORT <span class="preview-slash">/</span> EXAMPLE VIEW</span>
+          <span class="preview-live"><i></i> Evidence-led</span>
         </div>
-        <div class="example-chips">
-          <span class="chip-label">Examples</span>
-          <button class="chip" data-org="923609016">Equinor ASA (923609016)</button>
-          <button class="chip" data-org="984851006">DNB Bank ASA (984851006)</button>
-          <button class="chip" data-org="943753709">Kongsberg Gruppen (943753709)</button>
-          <button class="chip" data-org="982463718">Telenor ASA (982463718)</button>
+        <div class="preview-body">
+          <div class="preview-company">
+            <div class="preview-labels"><span class="preview-active">Active</span><span>Norway</span></div>
+            <h2>KONGSBERG GRUPPEN ASA</h2>
+            <p class="preview-org">943 753 709 <span>·</span> Example company profile</p>
+          </div>
+          <div class="preview-confidence">
+            <span>Evidence confidence</span>
+            <strong>90<small>%</small></strong>
+            <p>Based on source authority, corroboration and consistency</p>
+          </div>
+          <div class="preview-facts">
+            <div><span>Chief executive</span><strong>Eirik Lie</strong></div>
+            <div><span>Industry</span><strong>Technology / industrial systems</strong></div>
+            <div><span>Headquarters</span><strong>Kongsberg</strong></div>
+          </div>
+          <div class="preview-verification">
+            <div class="preview-verification-title"><span class="preview-warning" aria-hidden="true">!</span><div><span>Verification</span><strong>Conflicting information detected</strong></div></div>
+            <p>Different sources report different claims. Review the evidence before drawing a conclusion.</p>
+            <div class="preview-sources"><span>Evidence / sources</span><span>Brønnøysundregistrene</span><span>Official company sources</span><span>Public web sources</span></div>
+          </div>
         </div>
+        <div class="preview-caption"><span>ILLUSTRATIVE REPORT PREVIEW</span><span>Example values shown for presentation.</span></div>
+      </section>
+    </section>
+
+    <section id="about" class="editorial-statement">
+      <p class="section-index">01 <span>·</span> WHY SIGNALPOST</p>
+      <div>
+        <h2>Don't just find company information.<br /><em>Know why you can trust it.</em></h2>
+        <p>Signalpost connects company facts to their sources, compares conflicting claims, and makes uncertainty visible instead of hiding it.</p>
       </div>
     </section>
 
-    <!-- Alert / Message Container -->
-    <div id="alert-banner" class="alert-banner hidden"></div>
+    <section id="how-it-works" class="core-ideas" aria-label="How Signalpost works">
+      <article><span>01</span><h3>Research</h3><p>Find relevant company information across registry and public sources.</p></article>
+      <article><span>02</span><h3>Verify</h3><p>Compare claims, identify conflicts, and prioritize stronger evidence.</p></article>
+      <article id="evidence"><span>03</span><h3>Trace</h3><p>See where important facts came from and why they were selected.</p></article>
+    </section>
 
-    <div id="loading-state" class="loading-card hidden">
-      <div class="spinner" aria-hidden="true"></div>
-      <h3 id="loading-title">Researching company...</h3>
-      <div class="pipeline-steps">
-        <div class="step active" id="step-resolve">1. Enhetsregisteret Resolver</div>
-        <div class="step" id="step-search">2. Source Discovery</div>
-        <div class="step" id="step-extract">3. Fact Extraction</div>
-        <div class="step" id="step-verify">4. Conflict Verification</div>
+    <section id="research" class="research-area" aria-label="Company research">
+      <div class="research-intro">
+        <p class="section-index">02 <span>·</span> START WITH A COMPANY</p>
+        <h2>Research with a clear source trail.</h2>
+        <p>Enter a Norwegian organisation number to explore its verified company profile.</p>
       </div>
-    </div>
-
-    <main id="results-container" class="results-container hidden">
-      <section class="card identity-card">
-        <div class="identity-header">
-          <div>
-            <div class="identity-badges">
-              <span id="badge-status" class="badge badge-active">Active</span>
-              <span id="badge-org-type" class="badge badge-neutral">ASA</span>
-              <span id="badge-country" class="badge badge-neutral">Norway</span>
+      <div class="research-workspace">
+        <div class="workspace-status">
+          <div class="system-status" id="system-status" aria-live="polite">
+            <span class="status-dot"></span>
+            <span id="status-text">Connecting...</span>
+          </div>
+        </div>
+        <section class="search-section" aria-label="Company research controls">
+          <div class="search-box">
+            <label for="company-input">Norwegian organisation number</label>
+            <div class="input-group">
+              <input type="text" id="company-input" placeholder="Enter 9-digit organisation number" maxlength="15" autocomplete="off" />
+              <button id="btn-research" class="btn btn-primary"><span>Research company</span></button>
+              <button id="btn-refresh" class="btn btn-secondary" title="Re-research and detect changes"><span>Refresh</span></button>
+              <button id="btn-history" class="btn btn-outline" title="View change history"><span>History</span></button>
             </div>
-            <h2 id="company-name">Company Name</h2>
-            <div class="meta-row">
-              <span class="meta-item"><strong>Org Nr:</strong> <code id="company-org-nr">000000000</code></span>
-              <span class="meta-item"><strong>Founded:</strong> <span id="company-founded">-</span></span>
-              <span class="meta-item"><strong>Registered:</strong> <span id="company-registered">-</span></span>
+            <div class="example-chips">
+              <span class="chip-label">Try an example</span>
+              <button class="chip" data-org="923609016">Equinor</button>
+              <button class="chip" data-org="984851006">DNB</button>
+              <button class="chip" data-org="943753709">Kongsberg</button>
+              <button class="chip" data-org="982463718">Telenor</button>
             </div>
           </div>
-          <div class="confidence-box" aria-label="Evidence confidence">
-            <span class="confidence-label">Evidence confidence</span>
-            <div class="confidence-val" id="confidence-val">95%</div>
-            <span class="confidence-sub">Based on source authority, corroboration and consistency. Not a measure of certainty.</span>
-          </div>
-        </div>
+        </section>
 
-        <div class="identity-details">
-          <div class="detail-cell">
-            <span class="cell-label">Registered Address</span>
-            <span class="cell-val" id="company-address">-</span>
-          </div>
-          <div class="detail-cell">
-            <span class="cell-label">City / Country</span>
-            <span class="cell-val" id="company-city">-</span>
-          </div>
-          <div class="detail-cell">
-            <span class="cell-label">Official Website</span>
-            <span class="cell-val" id="company-website">-</span>
-          </div>
-          <div class="detail-cell">
-            <span class="cell-label">Employees</span>
-            <span class="cell-val" id="company-employees">-</span>
-          </div>
-        </div>
-      </section>
+        <div id="alert-banner" class="alert-banner hidden"></div>
 
-      <section class="report-section summary-section" aria-labelledby="summary-heading">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">At a glance</p>
-            <h3 id="summary-heading">Executive summary</h3>
+        <section id="loading-state" class="loading-card hidden" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <h3 id="loading-title">Researching company...</h3>
+          <div class="pipeline-steps">
+            <div class="step active" id="step-resolve">1. Enhetsregisteret Resolver</div>
+            <div class="step" id="step-search">2. Source Discovery</div>
+            <div class="step" id="step-extract">3. Fact Extraction</div>
+            <div class="step" id="step-verify">4. Conflict Verification</div>
           </div>
-        </div>
-        <div class="summary-grid">
-          <article class="summary-fact"><span>Chief executive</span><strong id="summary-ceo">Not reported</strong></article>
-          <article class="summary-fact"><span>Industry / business focus</span><strong id="summary-industry">Not reported</strong></article>
-          <article class="summary-fact"><span>Headquarters</span><strong id="summary-headquarters">Not reported</strong></article>
-          <article class="summary-fact"><span>Confidence</span><strong id="summary-confidence">Not reported</strong></article>
-        </div>
-      </section>
+        </section>
 
-      <section class="report-section" aria-labelledby="company-overview-heading">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Company overview</p>
-            <h3 id="company-overview-heading">What this company does</h3>
-          </div>
-        </div>
-        <article class="overview-card">
-          <p id="company-summary" class="company-summary">Not reported</p>
-          <div class="overview-meta">
-            <div><span class="cell-label">Industry classification</span><span id="fact-industry">Not reported</span></div>
-            <details class="registered-purpose">
-              <summary class="cell-label">Registered business purpose</summary>
-              <span id="fact-purpose">Not reported</span>
+        <section id="results-container" class="results-container hidden" aria-live="polite">
+          <section class="card identity-card">
+            <div class="identity-header">
+              <div>
+                <div class="identity-badges">
+                  <span id="badge-status" class="badge badge-active">Active</span>
+                  <span id="badge-org-type" class="badge badge-neutral">ASA</span>
+                  <span id="badge-country" class="badge badge-neutral">Norway</span>
+                </div>
+                <h2 id="company-name">Company Name</h2>
+                <div class="meta-row">
+                  <span class="meta-item"><strong>Org Nr:</strong> <code id="company-org-nr">000000000</code></span>
+                  <span class="meta-item"><strong>Founded:</strong> <span id="company-founded">-</span></span>
+                  <span class="meta-item"><strong>Registered:</strong> <span id="company-registered">-</span></span>
+                </div>
+              </div>
+              <div class="confidence-box" aria-label="Evidence confidence">
+                <span class="confidence-label">Evidence confidence</span>
+                <div class="confidence-val" id="confidence-val">95%</div>
+                <span class="confidence-sub">Based on source authority, corroboration and consistency. Not a measure of certainty.</span>
+              </div>
+            </div>
+            <div class="identity-details">
+              <div class="detail-cell"><span class="cell-label">Registered Address</span><span class="cell-val" id="company-address">-</span></div>
+              <div class="detail-cell"><span class="cell-label">City / Country</span><span class="cell-val" id="company-city">-</span></div>
+              <div class="detail-cell"><span class="cell-label">Official Website</span><span class="cell-val" id="company-website">-</span></div>
+              <div class="detail-cell"><span class="cell-label">Employees</span><span class="cell-val" id="company-employees">-</span></div>
+            </div>
+          </section>
+
+          <section id="conflicts-section" class="report-section trust-section">
+            <div class="section-heading"><div><p class="eyebrow">Verification</p><h3 id="trust-heading">Trust signals</h3></div></div>
+            <p id="trust-status" class="trust-status"></p>
+            <div id="conflicts-list" class="conflicts-list"></div>
+          </section>
+
+          <section class="report-section summary-section" aria-labelledby="summary-heading">
+            <div class="section-heading"><div><p class="eyebrow">At a glance</p><h3 id="summary-heading">Executive summary</h3></div></div>
+            <div class="summary-grid">
+              <article class="summary-fact"><span>Chief executive</span><strong id="summary-ceo">Not reported</strong></article>
+              <article class="summary-fact"><span>Industry / business focus</span><strong id="summary-industry">Not reported</strong></article>
+              <article class="summary-fact"><span>Headquarters</span><strong id="summary-headquarters">Not reported</strong></article>
+              <article class="summary-fact"><span>Confidence</span><strong id="summary-confidence">Not reported</strong></article>
+            </div>
+          </section>
+
+          <section class="report-section" aria-labelledby="company-overview-heading">
+            <div class="section-heading"><div><p class="eyebrow">Company overview</p><h3 id="company-overview-heading">What this company does</h3></div></div>
+            <article class="overview-card">
+              <p id="company-summary" class="company-summary">Not reported</p>
+              <div class="overview-meta">
+                <div><span class="cell-label">Industry classification</span><span id="fact-industry">Not reported</span></div>
+                <details class="registered-purpose"><summary class="cell-label">Registered business purpose</summary><span id="fact-purpose">Not reported</span></details>
+              </div>
+            </article>
+          </section>
+
+          <section class="report-section" aria-labelledby="people-heading">
+            <div class="section-heading"><div><p class="eyebrow">Leadership</p><h3 id="people-heading">Key people</h3></div></div>
+            <div id="key-people" class="key-people-grid"></div>
+            <details id="other-people-details" class="secondary-disclosure hidden"><summary id="other-people-summary">Other leadership</summary><div id="management-list" class="management-list"></div></details>
+          </section>
+
+          <section id="products-section" class="report-section" aria-labelledby="products-heading">
+            <div class="section-heading"><div><p class="eyebrow">Offerings</p><h3 id="products-heading">Products & services</h3></div></div>
+            <ul id="products-list" class="products-list"></ul>
+          </section>
+
+          <section id="activity-section" class="report-section" aria-labelledby="activity-heading">
+            <div class="section-heading"><div><p class="eyebrow">Updates</p><h3 id="activity-heading">Recent activity</h3></div></div>
+            <ul id="activity-list" class="activity-list"></ul>
+            <div id="activity-empty" class="activity-empty hidden"><strong>No verified recent activity found</strong><p>Available sources did not provide sufficiently recent dated activity.</p></div>
+          </section>
+
+          <section class="report-section evidence-section">
+            <details id="evidence-details">
+              <summary class="evidence-summary">
+                <span><span class="eyebrow">Audit trail</span><strong>Evidence & sources <span class="evidence-action">View details</span></strong></span>
+                <span id="evidence-stats" class="evidence-stats">0 citations tracked</span>
+              </summary>
+              <p class="section-desc">Source records include the extracted field and value, source link, supporting quote, confidence, and available dates.</p>
+              <div class="table-responsive"><table class="evidence-table"><thead><tr><th>Field</th><th>Value</th><th>Source</th><th>Evidence</th><th>Confidence</th><th>Dates</th></tr></thead><tbody id="evidence-table-body"></tbody></table></div>
             </details>
-          </div>
-        </article>
-      </section>
+          </section>
+        </section>
+      </div>
+    </section>
 
-      <section class="report-section" aria-labelledby="people-heading">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Leadership</p>
-            <h3 id="people-heading">Key people</h3>
-          </div>
-        </div>
-        <div id="key-people" class="key-people-grid"></div>
-        <details id="other-people-details" class="secondary-disclosure hidden">
-          <summary id="other-people-summary">Other leadership</summary>
-          <div id="management-list" class="management-list"></div>
-        </details>
-      </section>
-
-      <section id="products-section" class="report-section" aria-labelledby="products-heading">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Offerings</p>
-            <h3 id="products-heading">Products & services</h3>
-          </div>
-        </div>
-        <ul id="products-list" class="products-list"></ul>
-      </section>
-
-      <section id="conflicts-section" class="report-section trust-section">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Verification</p>
-            <h3 id="trust-heading">Trust signals</h3>
-          </div>
-        </div>
-        <p id="trust-status" class="trust-status"></p>
-        <div id="conflicts-list" class="conflicts-list"></div>
-      </section>
-
-      <section id="activity-section" class="report-section" aria-labelledby="activity-heading">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Updates</p>
-            <h3 id="activity-heading">Recent activity</h3>
-          </div>
-        </div>
-        <ul id="activity-list" class="activity-list"></ul>
-        <div id="activity-empty" class="activity-empty hidden">
-          <strong>No verified recent activity found</strong>
-          <p>Available sources did not provide sufficiently recent dated activity.</p>
-        </div>
-      </section>
-
-      <section class="report-section evidence-section">
-        <details id="evidence-details">
-          <summary class="evidence-summary">
-            <span>
-              <span class="eyebrow">Audit trail</span>
-              <strong>Evidence & sources <span class="evidence-action">View details</span></strong>
-            </span>
-            <span id="evidence-stats" class="evidence-stats">0 citations tracked</span>
-          </summary>
-          <p class="section-desc">Source records include the extracted field and value, source link, supporting quote, confidence, and available dates.</p>
-          <div class="table-responsive">
-            <table class="evidence-table">
-              <thead>
-                <tr><th>Field</th><th>Value</th><th>Source</th><th>Evidence</th><th>Confidence</th><th>Dates</th></tr>
-              </thead>
-              <tbody id="evidence-table-body"></tbody>
-            </table>
-          </div>
-        </details>
-      </section>
-    </main>
-
-    <!-- History Modal / Section -->
     <div id="history-modal" class="modal-overlay hidden">
       <div class="modal-card">
-        <div class="modal-header">
-          <h3>Research Run History & Audit Trail</h3>
-          <button id="modal-close" class="btn-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div id="history-runs" class="history-runs-list"></div>
-          <h4>Field Modifications & Change Diffs</h4>
-          <div id="history-changes" class="history-changes-list"></div>
-        </div>
+        <div class="modal-header"><h3>Research Run History & Audit Trail</h3><button id="modal-close" class="btn-close">&times;</button></div>
+        <div class="modal-body"><div id="history-runs" class="history-runs-list"></div><h4>Field Modifications & Change Diffs</h4><div id="history-changes" class="history-changes-list"></div></div>
       </div>
     </div>
+  </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <p>Signalpost &bull; Built with FastAPI, Pydantic, SQLite & Brønnøysundregistrene Enhetsregisteret API.</p>
-    </footer>
-  </div>
-
-  <script src="/static/app.js?v=20261004-polish"></script>
+  <footer class="site-footer"><a class="wordmark" href="#top">SIGNALPOST</a><span>Evidence-first company intelligence for Norwegian businesses.</span><a href="#research">Research a company ↑</a></footer>
+  <script src="/static/app.js?v=20261004-editorial"></script>
 </body>
 </html>

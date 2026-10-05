@@ -134,14 +134,34 @@ def _failure_result(company_number: str, status: str, error: Exception, duration
     }
 
 
+def _is_resumable_result(result: dict[str, Any]) -> bool:
+    """Check if a previous result represents a genuinely completed research evaluation."""
+    status = result.get("status")
+    if status in ("not_found", "invalid"):
+        return True
+    if status == "success":
+        llm_usage = result.get("llm_usage") or {}
+        # If fallback was used (e.g. MockLLM fallback), it was not evaluated by the real LLM
+        if llm_usage.get("fallback_used"):
+            return False
+        # If provider_used is mock when groq was configured, not a real LLM success
+        if llm_usage.get("provider_used") == "mock" and llm_usage.get("configured_provider") != "mock":
+            return False
+        return True
+    return False
+
+
 async def run_batch(
     company_numbers: Iterable[str],
     researcher: ResearcherService,
-    max_concurrency: int = 3,
+    max_concurrency: int = 1,
     retries: int = 1,
     retry_backoff_seconds: float = 1.0,
+    output_dir: Path | None = None,
+    resume: bool = False,
+    stop_on_rate_limit: bool = False,
 ) -> dict[str, Any]:
-    """Research inputs concurrently, returning one ordered record per input."""
+    """Research inputs with bounded concurrency, optional resume, and incremental saving."""
     if max_concurrency < 1:
         raise ValueError("max_concurrency must be at least 1.")
     if retries < 0:
@@ -151,19 +171,116 @@ async def run_batch(
     started_at = datetime.now(timezone.utc)
     start_time = time.perf_counter()
     semaphore = asyncio.Semaphore(max_concurrency)
+    stop_event = asyncio.Event()
+    save_lock = asyncio.Lock()
+
+    existing_results: dict[str, dict[str, Any]] = {}
+    if resume and output_dir:
+        results_file = output_dir / "batch_results.json"
+        if results_file.exists():
+            try:
+                prev_batch = json.loads(results_file.read_text(encoding="utf-8"))
+                for r in prev_batch.get("results", []):
+                    if _is_resumable_result(r):
+                        existing_results[r["company_number"]] = r
+            except Exception:
+                pass
+
+    interim_results: dict[str, dict[str, Any]] = {}
+    # Pre-populate ONLY with genuinely completed results if resuming
+    for num in numbers:
+        if num in existing_results:
+            interim_results[num] = existing_results[num]
+
+    async def save_progress():
+        if output_dir:
+            async with save_lock:
+                completed = [interim_results[n] for n in numbers if n in interim_results]
+                successful = sum(r.get("status") == "success" for r in completed)
+                failed = sum(r.get("status") not in ("success",) for r in completed)
+                interim_batch = {
+                    "batch_started_at": started_at.isoformat(),
+                    "batch_finished_at": datetime.now(timezone.utc).isoformat(),
+                    "total_inputs": len(numbers),
+                    "successful": successful,
+                    "failed": failed,
+                    "results": completed,
+                    "total_duration_seconds": round(time.perf_counter() - start_time, 3),
+                }
+                write_batch_outputs(interim_batch, output_dir)
 
     async def process_one(raw_number: str) -> dict[str, Any]:
-        company_start = time.perf_counter()
+        # Check if already genuinely completed from a previous run.
+        if resume and raw_number in existing_results:
+            return existing_results[raw_number]
+
+        if stop_event.is_set():
+            res = _failure_result(
+                raw_number,
+                "rate_limited",
+                RuntimeError("Batch halted due to Groq rate limit on earlier company."),
+                0.0,
+            )
+            interim_results[raw_number] = res
+            await save_progress()
+            return res
+
         try:
             normalized_number = validate_norwegian_org_number(raw_number)
         except InvalidCompanyNumberError as error:
-            return _failure_result(raw_number, "invalid", error, time.perf_counter() - company_start)
+            res = _failure_result(raw_number, "invalid", error, 0.0)
+            interim_results[raw_number] = res
+            await save_progress()
+            return res
 
         async with semaphore:
+            if stop_event.is_set():
+                res = _failure_result(
+                    raw_number,
+                    "rate_limited",
+                    RuntimeError("Batch halted due to Groq rate limit on earlier company."),
+                    0.0,
+                )
+                interim_results[raw_number] = res
+                await save_progress()
+                return res
+
+            company_start = time.perf_counter()
+
             for attempt in range(retries + 1):
                 try:
                     profile = await researcher.research_company(normalized_number)
-                    return {
+                    llm_usage = getattr(profile, "_llm_usage", None) or {}
+                    fallback_used = bool(llm_usage.get("fallback_used"))
+                    fallback_reason = str(llm_usage.get("fallback_reason") or "")
+
+                    # When --stop-on-rate-limit is active and LLMService fell back to
+                    # MockLLM because Groq returned 429, the result must NOT be saved as
+                    # "success". A "success" result is permanently skipped on --resume,
+                    # but this company was never researched by the real LLM.
+                    # Save it as "rate_limited" so it is re-researched on next --resume.
+                    if stop_on_rate_limit and fallback_used and (
+                        "429" in fallback_reason or "rate limit" in fallback_reason.lower()
+                    ):
+                        stop_event.set()
+                        res = _failure_result(
+                            raw_number,
+                            "rate_limited",
+                            RuntimeError(
+                                f"Groq 429 — LLM fell back to MockLLM; "
+                                f"will be re-researched on next --resume run. "
+                                f"Original reason: {fallback_reason}"
+                            ),
+                            time.perf_counter() - company_start,
+                        )
+                        # Preserve available company identity for the report
+                        res["company_name"] = profile.identity.name
+                        res["llm_usage"] = llm_usage
+                        interim_results[raw_number] = res
+                        await save_progress()
+                        return res
+
+                    res = {
                         "company_number": raw_number,
                         "status": "success",
                         "company_name": profile.identity.name,
@@ -171,24 +288,44 @@ async def run_batch(
                         "duration_seconds": round(time.perf_counter() - company_start, 3),
                         "error_message": None,
                     }
+                    interim_results[raw_number] = res
+                    await save_progress()
+                    return res
                 except CompanyNotFoundError as error:
-                    return _failure_result(
+                    res = _failure_result(
                         raw_number, "not_found", error, time.perf_counter() - company_start
                     )
+                    interim_results[raw_number] = res
+                    await save_progress()
+                    return res
                 except Exception as error:
+                    err_str = str(error).lower()
+                    if stop_on_rate_limit and ("429" in err_str or "rate limit" in err_str):
+                        stop_event.set()
+                        res = _failure_result(
+                            raw_number, "rate_limited", error, time.perf_counter() - company_start
+                        )
+                        interim_results[raw_number] = res
+                        await save_progress()
+                        return res
+
                     if attempt < retries and _is_transient_error(error):
                         await asyncio.sleep(retry_backoff_seconds * (2 ** attempt))
                         continue
-                    return _failure_result(
+
+                    res = _failure_result(
                         raw_number, "failed", error, time.perf_counter() - company_start
                     )
+                    interim_results[raw_number] = res
+                    await save_progress()
+                    return res
 
         raise RuntimeError("Batch worker exited without producing a result.")
 
     results = await asyncio.gather(*(process_one(number) for number in numbers))
     finished_at = datetime.now(timezone.utc)
     successful = sum(result["status"] == "success" for result in results)
-    return {
+    batch_output = {
         "batch_started_at": started_at.isoformat(),
         "batch_finished_at": finished_at.isoformat(),
         "total_inputs": len(numbers),
@@ -197,26 +334,41 @@ async def run_batch(
         "results": results,
         "total_duration_seconds": round(time.perf_counter() - start_time, 3),
     }
+    if output_dir:
+        write_batch_outputs(batch_output, output_dir)
+    return batch_output
 
 
 def make_report(batch: dict[str, Any]) -> dict[str, Any]:
     failures: dict[str, int] = {}
     llm_provider_counts: dict[str, int] = {}
     llm_fallback_companies = 0
+    groq_successful_companies = 0
+    rate_limited_companies = 0
+
     for result in batch["results"]:
-        if result["status"] != "success":
-            reason = result["error_message"] or result["status"]
+        status = result.get("status")
+        if status == "rate_limited":
+            rate_limited_companies += 1
+        if status != "success":
+            reason = result.get("error_message") or status
             failures[reason] = failures.get(reason, 0) + 1
         llm_usage = result.get("llm_usage") or {}
         provider = llm_usage.get("provider_used")
         if provider and provider != "unknown":
             llm_provider_counts[provider] = llm_provider_counts.get(provider, 0) + 1
-        if llm_usage.get("fallback_used"):
+        if status == "success" and llm_usage.get("fallback_used"):
             llm_fallback_companies += 1
+        elif status == "success" and provider == "groq":
+            groq_successful_companies += 1
+
     total = batch["total_inputs"]
     return {
         "total_companies": total,
         "successful_companies": batch["successful"],
+        "groq_successful_companies": groq_successful_companies,
+        "llm_fallback_companies": llm_fallback_companies,
+        "rate_limited_companies": rate_limited_companies,
         "failed_companies": batch["failed"],
         "total_duration_seconds": batch["total_duration_seconds"],
         "average_duration_seconds": (
@@ -225,7 +377,6 @@ def make_report(batch: dict[str, Any]) -> dict[str, Any]:
         ),
         "failure_reasons": failures,
         "llm_provider_counts": llm_provider_counts,
-        "llm_fallback_companies": llm_fallback_companies,
     }
 
 
@@ -244,15 +395,15 @@ def write_batch_outputs(batch: dict[str, Any], output_dir: Path) -> tuple[Path, 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Research a list of Norwegian organization numbers.")
     try:
-        default_concurrency = int(os.environ.get("MAX_CONCURRENCY", "3"))
-    except ValueError as error:
+        default_concurrency = int(os.environ.get("MAX_CONCURRENCY", "1"))
+    except ValueError:
         parser.error("MAX_CONCURRENCY must be a positive integer.")
     parser.add_argument("--input", required=True, type=Path, help="Input .txt, .csv, or .json file.")
     parser.add_argument(
         "--max-concurrency",
         type=int,
         default=default_concurrency,
-        help="Maximum simultaneous company research jobs (default: MAX_CONCURRENCY or 3).",
+        help="Maximum simultaneous company research jobs (default: MAX_CONCURRENCY or 1).",
     )
     parser.add_argument(
         "--retries",
@@ -263,6 +414,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--dry-run", action="store_true", help="Validate inputs without researching or writing output.")
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts"), help="Batch result directory.")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume an interrupted batch using previously completed records from output-dir.",
+    )
+    parser.add_argument(
+        "--stop-on-rate-limit",
+        action="store_true",
+        help="Halt remaining batch immediately if Groq returns 429 rate limit to avoid wasting quota.",
+    )
     return parser
 
 
@@ -289,11 +450,16 @@ async def _run_cli(args: argparse.Namespace) -> int:
         ResearcherService(),
         max_concurrency=args.max_concurrency,
         retries=args.retries,
+        output_dir=args.output_dir,
+        resume=args.resume,
+        stop_on_rate_limit=args.stop_on_rate_limit,
     )
     results_path, report_path = write_batch_outputs(batch, args.output_dir)
+    report = make_report(batch)
     print(
-        f"Batch complete: {batch['successful']} successful, {batch['failed']} failed "
-        f"of {batch['total_inputs']} inputs in {batch['total_duration_seconds']:.2f}s."
+        f"Batch complete: {batch['successful']} successful "
+        f"({report['groq_successful_companies']} via Groq, {report['llm_fallback_companies']} via MockLLM fallback), "
+        f"{batch['failed']} failed of {batch['total_inputs']} inputs in {batch['total_duration_seconds']:.2f}s."
     )
     print(f"Results: {results_path}\nReport: {report_path}")
     return 0 if batch["failed"] == 0 else 1

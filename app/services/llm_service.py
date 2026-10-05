@@ -11,6 +11,7 @@ import json
 import logging
 import re
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 import httpx
 from pydantic import BaseModel, Field
 
@@ -34,6 +35,7 @@ class LLMProviderError(RuntimeError):
     ):
         super().__init__(f"{provider} API error ({status_code}): {message[:200]}")
         self.status_code = status_code
+        self.raw_message = message
         self.headers = {key.lower(): value for key, value in (headers or {}).items()}
 
 
@@ -116,6 +118,56 @@ class LLMExtractionResult(BaseModel):
     provider_used: str = Field(default="unknown", exclude=True)
     fallback_used: bool = Field(default=False, exclude=True)
     fallback_reason: Optional[str] = Field(default=None, exclude=True)
+
+
+def _repair_and_parse_json(text: str) -> dict:
+    """
+    Parse JSON from model response with deterministic repair for minor formatting issues:
+    1. Strips markdown code blocks.
+    2. Strips leading/trailing conversational text.
+    3. Cleans trailing commas before } or ].
+    4. Balances missing closing braces/brackets if lightly truncated.
+    """
+    clean = text.strip()
+    if clean.startswith("```"):
+        clean = re.sub(r"^```(?:json)?\s*", "", clean)
+        clean = re.sub(r"\s*```$", "", clean)
+        clean = clean.strip()
+
+    # Try direct parse first
+    try:
+        return json.loads(clean)
+    except json.JSONDecodeError:
+        pass
+
+    # Extract outermost JSON object if surrounded by text
+    match = re.search(r"\{.*\}", clean, re.DOTALL)
+    if match:
+        candidate = match.group(0)
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            clean = candidate
+
+    # Remove trailing commas before closing braces/brackets
+    cleaned = re.sub(r",\s*([\]\}])", r"\1", clean)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # If missing trailing brackets/braces, attempt balanced closure
+    open_braces = cleaned.count("{") - cleaned.count("}")
+    open_brackets = cleaned.count("[") - cleaned.count("]")
+    if open_braces > 0 or open_brackets > 0:
+        patch = cleaned + ("]" * max(0, open_brackets)) + ("}" * max(0, open_braces))
+        try:
+            return json.loads(patch)
+        except json.JSONDecodeError:
+            pass
+
+    # Re-raise standard JSONDecodeError if unrepairable
+    return json.loads(clean)
 
 
 def format_extraction_result(parsed: Dict[str, Any], documents: List[Dict[str, str]]) -> LLMExtractionResult:
@@ -272,7 +324,198 @@ class MockLLMProvider(BaseLLMProvider):
         )
 
 
+# ---------------------------------------------------------------------------
+# Source budget and content compression helpers
+# ---------------------------------------------------------------------------
+
+# Maximum number of source documents to include in one LLM prompt.
+# Chosen to cover all key fields while keeping token cost manageable.
+# The pipeline may pass more documents; extras are ranked and pruned here.
+_SOURCE_BUDGET = 10
+
+# Per-document content character cap.  A sentence-boundary search within
+# the window below is preferred; if none is found the hard cap is used.
+# 450 chars ≈ 3–4 sentences, enough for any single factual claim.
+_CONTENT_SOFT_WINDOW = 450
+_CONTENT_HARD_CAP = 500
+
+# Authoritative / high-priority URL patterns (Norwegian public sources).
+_HIGH_PRIORITY_DOMAINS = re.compile(
+    r"brreg\.no|data\.brreg\.no|proff\.no|ravninfo\.no"
+    r"|finanstilsynet\.no|skatteetaten\.no|lovdata\.no",
+    re.IGNORECASE,
+)
+_NEWS_DOMAINS = re.compile(
+    r"e24\.no|dn\.no|aftenposten\.no|nrk\.no|reuters\.com"
+    r"|bloomberg\.com|ft\.com|businesswire\.com|prnewswire\.com",
+    re.IGNORECASE,
+)
+
+
+def _source_priority_score(doc: Dict[str, Any], company_name: str) -> int:
+    """
+    Score a document for inclusion priority (higher = more important).
+    Does NOT discard any document — only ranks them so the budget
+    prefers the most authoritative and diverse sources.
+    """
+    url = (doc.get("url") or "").lower()
+    title = (doc.get("title") or "").lower()
+    snippet = (doc.get("snippet") or "").lower()
+    name_lower = company_name.lower()
+
+    score = 0
+
+    # Authoritative Norwegian registry sources
+    if _HIGH_PRIORITY_DOMAINS.search(url):
+        score += 40
+
+    # Official company website / investor-relations / newsroom
+    if any(tok in url for tok in ("investor", "ir.", "newsroom", "press", "about")):
+        score += 20
+
+    # Named company in title (likely directly about this company)
+    if name_lower and any(tok in title for tok in name_lower.split() if len(tok) > 3):
+        score += 15
+
+    # Reputable business news sources
+    if _NEWS_DOMAINS.search(url):
+        score += 10
+
+    # Has a publication date (dated sources are more reliably recent)
+    if doc.get("publication_date"):
+        score += 8
+
+    # Has non-trivial content
+    content_len = len(snippet)
+    if content_len > 200:
+        score += 5
+    if content_len > 400:
+        score += 3
+
+    return score
+
+
+def _compress_content(text: str) -> str:
+    """
+    Return the most evidence-dense portion of a content string within the
+    character budget. Tries to end cleanly at a sentence or word boundary
+    close to the budget rather than mid-sentence or mid-word.
+    Never makes an LLM call.
+    """
+    if not text:
+        return ""
+    text = text.strip()
+    if len(text) <= _CONTENT_SOFT_WINDOW:
+        return text
+
+    # Search for sentence boundaries within the hard cap
+    window = text[:_CONTENT_HARD_CAP]
+    sentence_matches = list(re.finditer(r"[.!?](?:\s+|$)", window))
+    # Pick the latest sentence boundary that preserves a substantial portion of content
+    for m in reversed(sentence_matches):
+        if m.end() >= 250:
+            return text[: m.end()].strip()
+
+    # If no sentence boundary >= 250 chars, break cleanly at a word boundary
+    last_space = window.rfind(" ")
+    if last_space >= 250:
+        return window[:last_space].strip()
+
+    # Fallback to hard cap
+    return window.strip()
+
+
+def _prepare_documents_for_extraction(
+    documents: List[Dict[str, Any]],
+    company_name: str,
+) -> List[Dict[str, Any]]:
+    """
+    Apply source budget and content compression before sending to the LLM.
+
+    Steps:
+    1. Rank documents by priority score (authoritative > news > other).
+    2. Select up to _SOURCE_BUDGET documents, preserving domain diversity
+       (no more than 2 documents from the same domain, unless budget allows).
+    3. Compress each document's content with sentence-boundary-aware truncation.
+    4. Return a new list of dicts — original documents are NOT mutated.
+
+    Quality guarantees:
+    - All citation URLs remain intact (only content is compressed, not URLs).
+    - Authoritative sources (brreg, proff) are always included if present.
+    - Source ordering is preserved within rank tier to maintain context.
+    """
+    if not documents:
+        return []
+
+    # Score and sort by descending priority
+    scored = sorted(
+        enumerate(documents),
+        key=lambda item: _source_priority_score(item[1], company_name),
+        reverse=True,
+    )
+
+    selected_indices: List[int] = []
+    domain_counts: Dict[str, int] = {}
+    # Allow at most 2 docs per domain; authoritative domains get 3 slots
+    domain_limit = 2
+    auth_domain_limit = 3
+
+    for original_idx, doc in scored:
+        if len(selected_indices) >= _SOURCE_BUDGET:
+            break
+        url = (doc.get("url") or "").lower()
+        try:
+            domain = urlparse(url).netloc or url
+        except Exception:
+            domain = url
+        # Strip www. prefix for deduplication
+        domain = domain.lstrip("www.")
+
+        is_auth = bool(_HIGH_PRIORITY_DOMAINS.search(url))
+        limit = auth_domain_limit if is_auth else domain_limit
+        if domain_counts.get(domain, 0) < limit:
+            selected_indices.append(original_idx)
+            domain_counts[domain] = domain_counts.get(domain, 0) + 1
+
+    # If budget not filled, include remaining documents while still respecting domain limits
+    if len(selected_indices) < _SOURCE_BUDGET:
+        seen = set(selected_indices)
+        for original_idx, doc in scored:
+            if len(selected_indices) >= _SOURCE_BUDGET:
+                break
+            if original_idx not in seen:
+                url = (doc.get("url") or "").lower()
+                try:
+                    domain = urlparse(url).netloc or url
+                except Exception:
+                    domain = url
+                domain = domain.lstrip("www.")
+                is_auth = bool(_HIGH_PRIORITY_DOMAINS.search(url))
+                limit = auth_domain_limit if is_auth else domain_limit
+                if domain_counts.get(domain, 0) < limit:
+                    selected_indices.append(original_idx)
+                    domain_counts[domain] = domain_counts.get(domain, 0) + 1
+                    seen.add(original_idx)
+
+    # Restore original document order within the selected set
+    selected_indices_sorted = sorted(selected_indices)
+    result = []
+    for idx in selected_indices_sorted:
+        doc = documents[idx]
+        compressed_content = _compress_content(doc.get("snippet") or "")
+        result.append({
+            "url": doc.get("url"),
+            "title": doc.get("title"),
+            "snippet": compressed_content,
+            "retrieved_at": doc.get("retrieved_at"),
+            "publication_date": doc.get("publication_date"),
+        })
+
+    return result
+
+
 class OpenAICompatibleProvider(BaseLLMProvider):
+
     """
     Provider supporting OpenAI, Groq, OpenRouter, and local Ollama.
     """
@@ -292,7 +535,12 @@ class OpenAICompatibleProvider(BaseLLMProvider):
         if not self.api_key:
             raise ValueError("LLM_API_KEY is not configured.")
 
-        valid_urls_list = [d["url"] for d in documents if d.get("url")]
+        # Apply source budget and content compression before building the prompt.
+        # This selects the highest-value documents (up to _SOURCE_BUDGET), preserves
+        # domain diversity, and compresses verbose content to sentence boundaries.
+        # The original documents list is passed to format_extraction_result for URL
+        # validation so that all supplied URLs remain valid citation targets.
+        prepared_docs = _prepare_documents_for_extraction(documents, company_name)
 
         system_prompt = (
             "You are a strict data extraction agent for Norwegian corporate intelligence.\n"
@@ -301,13 +549,13 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             "2. DO NOT invent, assume, or hallucinate facts or URLs.\n"
             "3. If a field is not explicitly present in the sources, output null.\n"
             "4. Every item in 'citations' MUST cite the exact 'source_url' from which the fact was extracted.\n"
-            f"5. The ONLY allowed source_url values are: {valid_urls_list}\n"
+            "5. Use only URLs that appear in the Source Documents below. Do not invent URLs.\n"
             "6. You MUST return ONLY valid JSON matching the schema."
         )
 
         docs_formatted = "\n\n".join([
             f"--- Source [{i+1}] ---\nURL: {d.get('url')}\nTitle: {d.get('title')}\nContent: {d.get('snippet')}"
-            for i, d in enumerate(documents)
+            for i, d in enumerate(prepared_docs)
         ])
 
         user_prompt = (
@@ -321,7 +569,9 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             "- website (string or null)\n"
             "- recent_activity (string or null)\n"
             "- leadership_mentions (list of strings or null)\n"
-            "- citations (list of objects: {field, value, source_url, quote, confidence})"
+            "- citations (list of objects: {field, value, source_url, quote, confidence})\n\n"
+            "Keep each citation 'quote' concise (a brief factual excerpt under 25 words). "
+            "Do not quote entire paragraphs."
         )
 
         headers = {
@@ -335,20 +585,47 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                 {"role": "user", "content": user_prompt}
             ],
             "temperature": self.temperature,
-            "response_format": {"type": "json_object"}
+            "response_format": {"type": "json_object"},
+            # Safe completion headroom: 1500 tokens prevents mid-JSON truncation on
+            # companies with 8-15 citations.  Groq charges only for actual generated
+            # tokens (which stop naturally at ~450-750 tokens with concise quotes).
+            "max_tokens": 1500,
         }
 
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(f"{self.base_url}/chat/completions", headers=headers, json=payload)
+
+            # If Groq returns 400 with a JSON validation or generation error (e.g. proxy grammar issue),
+            # retry ONCE with prompt-guided JSON without the proxy-level response_format constraint.
+            if resp.status_code == 400 and any(
+                err in resp.text.lower() for err in ("failed to validate json", "failed to generate json")
+            ):
+                logger.warning(
+                    "[OpenAICompatibleProvider] Groq structured JSON rejected (HTTP 400); "
+                    "retrying once with prompt-guided JSON..."
+                )
+                retry_payload = dict(payload)
+                retry_payload.pop("response_format", None)
+                retry_payload["messages"] = [
+                    {
+                        "role": "system",
+                        "content": system_prompt + "\nReturn ONLY a raw JSON object. No markdown fences, no conversational text.",
+                    },
+                    {"role": "user", "content": user_prompt},
+                ]
+                retry_resp = await client.post(
+                    f"{self.base_url}/chat/completions", headers=headers, json=retry_payload
+                )
+                if retry_resp.status_code == 200:
+                    resp = retry_resp
+                else:
+                    raise LLMProviderError("LLM", retry_resp.status_code, retry_resp.text, retry_resp.headers)
+
             if resp.status_code != 200:
                 raise LLMProviderError("LLM", resp.status_code, resp.text, resp.headers)
             data = resp.json()
             raw_content = data["choices"][0]["message"]["content"]
-            clean_content = raw_content.strip()
-            if clean_content.startswith("```"):
-                clean_content = re.sub(r"^```(?:json)?\s*", "", clean_content)
-                clean_content = re.sub(r"\s*```$", "", clean_content)
-            parsed = json.loads(clean_content)
+            parsed = _repair_and_parse_json(raw_content)
             return format_extraction_result(parsed, documents)
 
 

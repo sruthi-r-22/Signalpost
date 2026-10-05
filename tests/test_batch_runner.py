@@ -192,3 +192,211 @@ def test_dry_run_does_not_construct_researcher_or_write_output(tmp_path, monkeyp
     assert "1 valid and 1 invalid" in capsys.readouterr().out
     assert not output_path.exists()
     assert preview_inputs(["923609016", "invalid"]) == {"total": 2, "valid": 1, "invalid": 1}
+
+
+def test_groq_success_is_skipped_on_resume(tmp_path):
+    """A genuine Groq success is recorded in batch_results.json and skipped on --resume."""
+    num1, num2 = VALID_NUMBERS[0], VALID_NUMBERS[1]
+    groq_usage = {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": False,
+        "fallback_reason": None,
+    }
+    # Initial run: company 1 succeeds with real Groq
+    initial_batch = {
+        "batch_started_at": "2026-10-05T12:00:00Z",
+        "batch_finished_at": "2026-10-05T12:01:00Z",
+        "total_inputs": 1,
+        "successful": 1,
+        "failed": 0,
+        "results": [
+            {
+                "company_number": num1,
+                "status": "success",
+                "company_name": f"Company {num1}",
+                "llm_usage": groq_usage,
+                "duration_seconds": 1.2,
+                "error_message": None,
+            }
+        ],
+        "total_duration_seconds": 1.2,
+    }
+    write_batch_outputs(initial_batch, tmp_path)
+
+    # Resume run with both companies
+    researcher = FakeResearcher(llm_usage=groq_usage)
+    batch = asyncio.run(
+        run_batch([num1, num2], researcher, resume=True, output_dir=tmp_path)
+    )
+
+    # num1 was skipped, only num2 was researched
+    assert researcher.calls == [num2]
+    assert batch["successful"] == 2
+    assert batch["results"][0]["company_number"] == num1
+    assert batch["results"][1]["company_number"] == num2
+
+
+def test_mock_fallback_on_rate_limit_stops_batch_and_marks_rate_limited(tmp_path):
+    """When stop_on_rate_limit is enabled, a 429 MockLLM fallback marks company rate_limited and halts."""
+    num1, num2, num3 = VALID_NUMBERS[0], VALID_NUMBERS[1], VALID_NUMBERS[2]
+    fallback_usage = {
+        "configured_provider": "groq",
+        "provider_used": "mock",
+        "fallback_used": True,
+        "fallback_reason": "LLMProviderError: LLM API error (429): rate limit exceeded",
+    }
+    researcher = FakeResearcher(llm_usage=fallback_usage)
+
+    batch = asyncio.run(
+        run_batch(
+            [num1, num2, num3],
+            researcher,
+            stop_on_rate_limit=True,
+            output_dir=tmp_path,
+        )
+    )
+
+    # First company was researched and hit rate limit, subsequent halted
+    assert researcher.calls == [num1]
+    assert batch["results"][0]["status"] == "rate_limited"
+    assert batch["results"][1]["status"] == "rate_limited"
+    assert batch["results"][2]["status"] == "rate_limited"
+    assert batch["successful"] == 0
+    assert batch["failed"] == 3
+
+    report = make_report(batch)
+    assert report["rate_limited_companies"] == 3
+    assert report["groq_successful_companies"] == 0
+
+
+def test_rate_limited_companies_are_retried_on_resume(tmp_path):
+    """Rate-limited companies from a previous batch run are NOT skipped when resuming."""
+    num1, num2 = VALID_NUMBERS[0], VALID_NUMBERS[1]
+    prev_batch = {
+        "batch_started_at": "2026-10-05T12:00:00Z",
+        "batch_finished_at": "2026-10-05T12:01:00Z",
+        "total_inputs": 2,
+        "successful": 0,
+        "failed": 2,
+        "results": [
+            {
+                "company_number": num1,
+                "status": "rate_limited",
+                "company_name": f"Company {num1}",
+                "llm_usage": None,
+                "duration_seconds": 0.5,
+                "error_message": "Groq rate limited",
+            },
+            {
+                "company_number": num2,
+                "status": "rate_limited",
+                "company_name": None,
+                "llm_usage": None,
+                "duration_seconds": 0.0,
+                "error_message": "Halted due to rate limit",
+            },
+        ],
+        "total_duration_seconds": 0.5,
+    }
+    write_batch_outputs(prev_batch, tmp_path)
+
+    # Resume run now succeeds
+    groq_usage = {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": False,
+        "fallback_reason": None,
+    }
+    researcher = FakeResearcher(llm_usage=groq_usage)
+    batch = asyncio.run(
+        run_batch([num1, num2], researcher, resume=True, output_dir=tmp_path)
+    )
+
+    # Both previously rate-limited companies were retried
+    assert researcher.calls == [num1, num2]
+    assert batch["successful"] == 2
+    assert all(r["status"] == "success" for r in batch["results"])
+
+
+def test_mock_fallback_without_stop_on_rate_limit_is_retried_on_resume(tmp_path):
+    """A company that previously completed via MockLLM fallback is NOT skipped on --resume."""
+    num1, num2 = VALID_NUMBERS[0], VALID_NUMBERS[1]
+    prev_batch = {
+        "batch_started_at": "2026-10-05T12:00:00Z",
+        "batch_finished_at": "2026-10-05T12:01:00Z",
+        "total_inputs": 2,
+        "successful": 2,
+        "failed": 0,
+        "results": [
+            {
+                "company_number": num1,
+                "status": "success",
+                "company_name": f"Company {num1}",
+                "llm_usage": {
+                    "configured_provider": "groq",
+                    "provider_used": "mock",
+                    "fallback_used": True,
+                    "fallback_reason": "429 rate limit",
+                },
+                "duration_seconds": 1.0,
+                "error_message": None,
+            },
+            {
+                "company_number": num2,
+                "status": "success",
+                "company_name": f"Company {num2}",
+                "llm_usage": {
+                    "configured_provider": "groq",
+                    "provider_used": "groq",
+                    "fallback_used": False,
+                    "fallback_reason": None,
+                },
+                "duration_seconds": 1.0,
+                "error_message": None,
+            },
+        ],
+        "total_duration_seconds": 2.0,
+    }
+    write_batch_outputs(prev_batch, tmp_path)
+
+    researcher = FakeResearcher(llm_usage={
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": False,
+    })
+    batch = asyncio.run(
+        run_batch([num1, num2], researcher, resume=True, output_dir=tmp_path)
+    )
+
+    # num1 (mock fallback) must be retried; num2 (real groq) must be skipped
+    assert researcher.calls == [num1]
+    assert batch["successful"] == 2
+
+
+def test_company_duration_measures_active_time_not_queue_wait(tmp_path):
+    """Company duration_seconds must reflect active execution time, not cumulative waiting time behind semaphore."""
+    num1, num2 = VALID_NUMBERS[0], VALID_NUMBERS[1]
+
+    class DelayResearcher(FakeResearcher):
+        async def research_company(self, company_number: str):
+            await asyncio.sleep(0.05)
+            return await super().research_company(company_number)
+
+    researcher = DelayResearcher()
+    batch = asyncio.run(
+        run_batch([num1, num2], researcher, max_concurrency=1, output_dir=tmp_path)
+    )
+
+    r1 = batch["results"][0]
+    r2 = batch["results"][1]
+
+    # Both companies should record active execution duration (~0.05s), neither should be cumulative (~0.10s)
+    assert 0.03 <= r1["duration_seconds"] <= 0.09
+    assert 0.03 <= r2["duration_seconds"] <= 0.09
+
+    report = make_report(batch)
+    # Average duration should be around 0.05s, not skewed by queue accumulation
+    assert 0.03 <= report["average_duration_seconds"] <= 0.09
+
+

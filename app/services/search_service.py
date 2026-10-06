@@ -172,7 +172,7 @@ class TavilySearchProvider(BaseSearchProvider):
     Search provider using Tavily Search API.
     """
 
-    def __init__(self, api_key: str, timeout: int = 15):
+    def __init__(self, api_key: str, timeout: float = 15):
         if not api_key:
             raise SearchProviderError("Tavily API key is missing. Set SEARCH_API_KEY in .env.")
         self.api_key = api_key
@@ -187,23 +187,32 @@ class TavilySearchProvider(BaseSearchProvider):
             "include_answer": False,
             "max_results": max_results
         }
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            resp = await client.post(url, json=payload)
-            if resp.status_code != 200:
-                raise SearchProviderError(f"Tavily search failed with code {resp.status_code}: {resp.text}")
-            data = resp.json()
-            now = datetime.now(timezone.utc).isoformat()
-            results = []
-            for r in data.get("results", []):
-                results.append(SearchResult(
-                    title=r.get("title", ""),
-                    url=r.get("url", ""),
-                    snippet=r.get("content", ""),
-                    retrieved_at=now,
-                    publication_date=r.get("published_date"),
-                    provider="tavily"
-                ))
-            return results
+        timeout = httpx.Timeout(
+            self.timeout,
+            connect=min(self.timeout, 5.0),
+        )
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                resp = await client.post(url, json=payload)
+                if resp.status_code != 200:
+                    raise SearchProviderError(f"Tavily search failed with code {resp.status_code}: {resp.text}")
+                data = resp.json()
+                now = datetime.now(timezone.utc).isoformat()
+                results = []
+                for r in data.get("results", []):
+                    results.append(SearchResult(
+                        title=r.get("title", ""),
+                        url=r.get("url", ""),
+                        snippet=r.get("content", ""),
+                        retrieved_at=now,
+                        publication_date=r.get("published_date"),
+                        provider="tavily"
+                    ))
+                return results
+        except httpx.TimeoutException as exc:
+            raise SearchProviderError(
+                f"Tavily search timed out after {self.timeout} seconds."
+            ) from exc
 
 
 class SerpApiSearchProvider(BaseSearchProvider):

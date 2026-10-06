@@ -25,11 +25,15 @@ from app.services.verifier import Verifier
 
 def _llm_usage_metadata(extraction_data: Dict[str, Any]) -> Dict[str, Any]:
     result = extraction_data.get("llm_result")
+    token_usage = getattr(result, "_token_usage", None) or {}
     return {
         "configured_provider": getattr(result, "configured_provider", "unknown"),
         "provider_used": getattr(result, "provider_used", "unknown"),
         "fallback_used": getattr(result, "fallback_used", False),
         "fallback_reason": getattr(result, "fallback_reason", None),
+        "prompt_tokens": token_usage.get("prompt_tokens"),
+        "completion_tokens": token_usage.get("completion_tokens"),
+        "total_tokens": token_usage.get("total_tokens"),
     }
 
 

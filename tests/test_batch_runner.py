@@ -147,6 +147,67 @@ def test_batch_reports_real_and_fallback_llm_usage():
     assert report["llm_fallback_companies"] == 1
 
 
+def test_batch_report_aggregates_only_reported_tokens_from_genuine_llm_successes():
+    batch = {
+        "total_inputs": 4,
+        "successful": 3,
+        "failed": 1,
+        "total_duration_seconds": 1.0,
+        "results": [
+            {
+                "status": "success",
+                "duration_seconds": 0.25,
+                "llm_usage": {
+                    "provider_used": "groq",
+                    "fallback_used": False,
+                    "prompt_tokens": 100,
+                    "completion_tokens": 50,
+                    "total_tokens": 150,
+                },
+            },
+            {
+                "status": "success",
+                "duration_seconds": 0.25,
+                "llm_usage": {
+                    "provider_used": "openai",
+                    "fallback_used": False,
+                    "prompt_tokens": 20,
+                },
+            },
+            {
+                "status": "success",
+                "duration_seconds": 0.25,
+                "llm_usage": {
+                    "provider_used": "mock",
+                    "fallback_used": True,
+                    "prompt_tokens": 999,
+                    "completion_tokens": 999,
+                    "total_tokens": 1998,
+                },
+            },
+            {
+                "status": "failed",
+                "duration_seconds": 0.25,
+                "llm_usage": {
+                    "provider_used": "groq",
+                    "fallback_used": False,
+                    "prompt_tokens": 500,
+                    "completion_tokens": 100,
+                    "total_tokens": 600,
+                },
+            },
+        ],
+    }
+
+    report = make_report(batch)
+
+    assert report["prompt_tokens"] == 120
+    assert report["completion_tokens"] == 50
+    assert report["total_tokens"] == 150
+    assert report["genuine_llm_successes_with_token_usage"] == 1
+    assert report["average_total_tokens_per_genuine_llm_success"] == 150
+
+
 @pytest.mark.parametrize(
     ("filename", "content", "expected"),
     [
@@ -398,5 +459,3 @@ def test_company_duration_measures_active_time_not_queue_wait(tmp_path):
     report = make_report(batch)
     # Average duration should be around 0.05s, not skewed by queue accumulation
     assert 0.03 <= report["average_duration_seconds"] <= 0.09
-
-

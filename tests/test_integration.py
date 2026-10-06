@@ -24,7 +24,7 @@ from app.services.llm_service import (
     format_extraction_result,
     _prepare_documents_for_extraction,
 )
-from app.services.researcher import ResearcherService
+from app.services.researcher import ResearcherService, _llm_usage_metadata
 from app.services.search_service import SearchResult, TavilySearchProvider
 
 client = TestClient(app)
@@ -459,6 +459,11 @@ def test_extraction_prompt_requests_all_existing_fields_and_no_url_duplication()
 
             def json(self):
                 return {
+                    "usage": {
+                        "prompt_tokens": 120,
+                        "completion_tokens": 45,
+                        "total_tokens": 165,
+                    },
                     "choices": [
                         {
                             "message": {
@@ -479,7 +484,14 @@ def test_extraction_prompt_requests_all_existing_fields_and_no_url_duplication()
         ]
 
         with patch("httpx.AsyncClient.post", new=mock_post):
-            await provider.extract_facts("Test Company", "123456789", docs)
+            result = await provider.extract_facts("Test Company", "123456789", docs)
+
+        assert result._token_usage == {
+            "prompt_tokens": 120,
+            "completion_tokens": 45,
+            "total_tokens": 165,
+        }
+        assert _llm_usage_metadata({"llm_result": result})["total_tokens"] == 165
 
         system_msg = captured_payload["messages"][0]["content"]
         user_msg = captured_payload["messages"][1]["content"]
@@ -548,10 +560,11 @@ def test_token_optimization_does_not_make_extra_llm_calls():
         ]
 
         with patch("httpx.AsyncClient.post", new=mock_post):
-            await provider.extract_facts("Test Company", "123456789", docs)
+            result = await provider.extract_facts("Test Company", "123456789", docs)
 
         # EXACTLY one LLM call was made
         assert call_count == 1
+        assert result._token_usage is None
 
     asyncio.run(_test())
 
@@ -577,6 +590,11 @@ def test_groq_http_400_json_validate_failed_triggers_retry_and_succeeds():
 
             def json(self):
                 return {
+                    "usage": {
+                        "prompt_tokens": 180,
+                        "completion_tokens": 60,
+                        "total_tokens": 240,
+                    },
                     "choices": [
                         {
                             "message": {
@@ -611,6 +629,11 @@ def test_groq_http_400_json_validate_failed_triggers_retry_and_succeeds():
         assert result.industry_focus == "Tech"
         assert len(result.citations) == 1
         assert result.citations[0]["source_url"] == "https://example.com/source-1"
+        assert result._token_usage == {
+            "prompt_tokens": 180,
+            "completion_tokens": 60,
+            "total_tokens": 240,
+        }
 
     asyncio.run(_test())
 
@@ -686,5 +709,4 @@ def test_groq_http_400_retry_unparseable_output_raises():
                 await provider.extract_facts("Test Company", "123456789", docs)
 
     asyncio.run(_test())
-
 

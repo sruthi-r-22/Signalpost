@@ -13,7 +13,7 @@ import re
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 from app.config import get_settings
 
@@ -103,6 +103,8 @@ def parse_confidence(val: Any, default: float = 0.85) -> float:
 
 
 class LLMExtractionResult(BaseModel):
+    _token_usage: Optional[Dict[str, int]] = PrivateAttr(default=None)
+
     company_summary: Optional[str] = Field(default=None, description="Concise summary of operations based solely on evidence")
     industry_focus: Optional[str] = Field(default=None, description="Primary industry or business focus")
     key_products_or_services: Optional[List[str]] = Field(default=None, description="Products or services mentioned in text")
@@ -626,7 +628,18 @@ class OpenAICompatibleProvider(BaseLLMProvider):
             data = resp.json()
             raw_content = data["choices"][0]["message"]["content"]
             parsed = _repair_and_parse_json(raw_content)
-            return format_extraction_result(parsed, documents)
+            result = format_extraction_result(parsed, documents)
+            usage = data.get("usage")
+            if isinstance(usage, dict):
+                token_usage = {
+                    key: usage[key]
+                    for key in ("prompt_tokens", "completion_tokens", "total_tokens")
+                    if isinstance(usage.get(key), int)
+                    and not isinstance(usage.get(key), bool)
+                    and usage[key] >= 0
+                }
+                result._token_usage = token_usage or None
+            return result
 
 
 class GeminiProvider(BaseLLMProvider):

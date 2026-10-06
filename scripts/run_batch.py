@@ -345,6 +345,10 @@ def make_report(batch: dict[str, Any]) -> dict[str, Any]:
     llm_fallback_companies = 0
     groq_successful_companies = 0
     rate_limited_companies = 0
+    prompt_tokens = 0
+    completion_tokens = 0
+    total_tokens = 0
+    genuine_llm_successes_with_token_usage = 0
 
     for result in batch["results"]:
         status = result.get("status")
@@ -361,6 +365,17 @@ def make_report(batch: dict[str, Any]) -> dict[str, Any]:
             llm_fallback_companies += 1
         elif status == "success" and provider == "groq":
             groq_successful_companies += 1
+        if (
+            status == "success"
+            and not llm_usage.get("fallback_used")
+            and provider not in (None, "unknown", "mock")
+        ):
+            prompt_tokens += _reported_token_count(llm_usage.get("prompt_tokens")) or 0
+            completion_tokens += _reported_token_count(llm_usage.get("completion_tokens")) or 0
+            reported_total_tokens = _reported_token_count(llm_usage.get("total_tokens"))
+            total_tokens += reported_total_tokens or 0
+            if reported_total_tokens is not None:
+                genuine_llm_successes_with_token_usage += 1
 
     total = batch["total_inputs"]
     return {
@@ -370,6 +385,14 @@ def make_report(batch: dict[str, Any]) -> dict[str, Any]:
         "llm_fallback_companies": llm_fallback_companies,
         "rate_limited_companies": rate_limited_companies,
         "failed_companies": batch["failed"],
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+        "genuine_llm_successes_with_token_usage": genuine_llm_successes_with_token_usage,
+        "average_total_tokens_per_genuine_llm_success": (
+            round(total_tokens / genuine_llm_successes_with_token_usage, 3)
+            if genuine_llm_successes_with_token_usage else None
+        ),
         "total_duration_seconds": batch["total_duration_seconds"],
         "average_duration_seconds": (
             round(sum(result["duration_seconds"] for result in batch["results"]) / total, 3)
@@ -378,6 +401,12 @@ def make_report(batch: dict[str, Any]) -> dict[str, Any]:
         "failure_reasons": failures,
         "llm_provider_counts": llm_provider_counts,
     }
+
+
+def _reported_token_count(value: Any) -> int | None:
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+        return value
+    return None
 
 
 def write_batch_outputs(batch: dict[str, Any], output_dir: Path) -> tuple[Path, Path]:

@@ -18,6 +18,7 @@ from app.services.extractor import InformationExtractor
 from app.services.llm_service import (
     LLMExtractionResult,
     LLMProviderError,
+    LLMRateLimitError,
     LLMService,
     MockLLMProvider,
     OpenAICompatibleProvider,
@@ -167,25 +168,43 @@ def test_429_retry_uses_bounded_server_reset_delay(headers, expected_delay):
     asyncio.run(_test())
 
 
-def test_repeated_429_retries_then_falls_back_to_mock():
+def test_repeated_groq_429_retries_then_raises_rate_limit():
     async def _test():
         service = _configured_groq_llm_service()
         service.provider = AsyncMock()
         service.provider.extract_facts.side_effect = LLMProviderError("LLM", 429, "rate limit")
 
         with patch("app.services.llm_service.asyncio.sleep", new_callable=AsyncMock) as sleep:
-            result = await service.extract_facts(
-                "TEST COMPANY",
-                "923609016",
-                [{"url": "https://example.com/test", "title": "Test", "snippet": "TEST COMPANY"}],
-            )
+            with pytest.raises(LLMRateLimitError, match="429"):
+                await service.extract_facts(
+                    "TEST COMPANY",
+                    "923609016",
+                    [{"url": "https://example.com/test", "title": "Test", "snippet": "TEST COMPANY"}],
+                )
 
         assert service.provider.extract_facts.await_count == 3
         assert [call.args[0] for call in sleep.await_args_list] == [1.0, 2.0]
+
+    asyncio.run(_test())
+
+
+def test_explicit_mock_provider_remains_available():
+    async def _test():
+        with patch("app.services.llm_service.get_settings") as mock_settings:
+            mock_settings.return_value.LLM_PROVIDER = "mock"
+            mock_settings.return_value.LLM_API_KEY = ""
+            mock_settings.return_value.LLM_MODEL = "test-model"
+            mock_settings.return_value.LLM_BASE_URL = ""
+            mock_settings.return_value.LLM_TEMPERATURE = 0.0
+            service = LLMService()
+
+        result = await service.extract_facts("TEST COMPANY", "923609016", [])
+
+        assert isinstance(service.provider, MockLLMProvider)
         assert isinstance(result, LLMExtractionResult)
+        assert result.configured_provider == "mock"
         assert result.provider_used == "mock"
-        assert result.fallback_used is True
-        assert "429" in result.fallback_reason
+        assert result.fallback_used is False
 
     asyncio.run(_test())
 
@@ -709,4 +728,3 @@ def test_groq_http_400_retry_unparseable_output_raises():
                 await provider.extract_facts("Test Company", "123456789", docs)
 
     asyncio.run(_test())
-

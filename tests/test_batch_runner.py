@@ -13,6 +13,7 @@ from scripts.run_batch import (
     run_batch,
     write_batch_outputs,
 )
+from app.services.llm_service import LLMRateLimitError
 
 
 VALID_NUMBERS = [
@@ -73,6 +74,26 @@ def test_company_failure_does_not_stop_remaining_research():
     assert batch["results"][2]["status"] == "failed"
     assert len(researcher.calls) == 5
     assert batch["successful"] == 4
+    assert batch["failed"] == 1
+
+
+def test_groq_rate_limit_is_recorded_without_losing_other_companies():
+    rate_limited_number = VALID_NUMBERS[1]
+    researcher = FakeResearcher({
+        rate_limited_number: LLMRateLimitError("groq", 429, "rate limit exceeded")
+    })
+
+    batch = asyncio.run(run_batch(VALID_NUMBERS[:3], researcher, retries=2))
+
+    assert [result["company_number"] for result in batch["results"]] == VALID_NUMBERS[:3]
+    assert [result["status"] for result in batch["results"]] == [
+        "success",
+        "rate_limited",
+        "success",
+    ]
+    assert len(batch["results"]) == 3
+    assert len(researcher.calls) == 3
+    assert batch["successful"] == 2
     assert batch["failed"] == 1
 
 

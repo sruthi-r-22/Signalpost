@@ -39,6 +39,10 @@ class LLMProviderError(RuntimeError):
         self.headers = {key.lower(): value for key, value in (headers or {}).items()}
 
 
+class LLMRateLimitError(LLMProviderError):
+    """Raised when a configured provider remains rate-limited after retries."""
+
+
 def _is_retryable_provider_error(error: Exception) -> bool:
     if isinstance(error, LLMProviderError):
         return error.status_code in (408, 429) or 500 <= error.status_code <= 599
@@ -770,6 +774,18 @@ class LLMService:
                 break
 
         err_msg = f"{type(last_error).__name__}: {str(last_error)[:150]}"
+        if (
+            self.provider_name == "groq"
+            and isinstance(last_error, LLMProviderError)
+            and last_error.status_code == 429
+        ):
+            raise LLMRateLimitError(
+                self.provider_name,
+                last_error.status_code,
+                last_error.raw_message,
+                last_error.headers,
+            ) from last_error
+
         logger.warning(
             f"[LLMService] Provider '{self.provider_name}' failed ({err_msg}). Falling back to MockLLMProvider."
         )

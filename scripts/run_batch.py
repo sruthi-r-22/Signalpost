@@ -24,6 +24,7 @@ from app.services.company_resolver import (  # noqa: E402
     InvalidCompanyNumberError,
     validate_norwegian_org_number,
 )
+from app.services.llm_service import LLMRateLimitError  # noqa: E402
 from app.services.researcher import ResearcherService  # noqa: E402
 
 
@@ -294,6 +295,15 @@ async def run_batch(
                 except CompanyNotFoundError as error:
                     res = _failure_result(
                         raw_number, "not_found", error, time.perf_counter() - company_start
+                    )
+                    interim_results[raw_number] = res
+                    await save_progress()
+                    return res
+                except LLMRateLimitError as error:
+                    if stop_on_rate_limit:
+                        stop_event.set()
+                    res = _failure_result(
+                        raw_number, "rate_limited", error, time.perf_counter() - company_start
                     )
                     interim_results[raw_number] = res
                     await save_progress()

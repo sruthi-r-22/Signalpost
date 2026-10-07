@@ -1,0 +1,1310 @@
+{
+  "batch_started_at": "2026-10-06T12:40:45.165292+00:00",
+  "batch_finished_at": "2026-10-06T12:40:56.613421+00:00",
+  "total_inputs": 100,
+  "successful": 100,
+  "failed": 0,
+  "results": [
+    {
+      "company_number": "810034882",
+      "status": "success",
+      "company_name": "SANDNES ELEKTRISKE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.219,
+      "error_message": null
+    },
+    {
+      "company_number": "810059672",
+      "status": "success",
+      "company_name": "AASEN & FARSTAD AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.803,
+      "error_message": null
+    },
+    {
+      "company_number": "810094532",
+      "status": "success",
+      "company_name": "ALSTRAY AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 75.334,
+      "error_message": null
+    },
+    {
+      "company_number": "810098252",
+      "status": "success",
+      "company_name": "ODD FELLOW HUSET BODØ AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.041,
+      "error_message": null
+    },
+    {
+      "company_number": "810105372",
+      "status": "success",
+      "company_name": "SØRLANDSPORTEN EIENDOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.565,
+      "error_message": null
+    },
+    {
+      "company_number": "810130822",
+      "status": "success",
+      "company_name": "ALSTRA AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 13.045,
+      "error_message": null
+    },
+    {
+      "company_number": "810182482",
+      "status": "success",
+      "company_name": "FAGMØBLER HERMAN ANDERSEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.269,
+      "error_message": null
+    },
+    {
+      "company_number": "810202572",
+      "status": "success",
+      "company_name": "BORTIGARD AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 189.547,
+      "error_message": null
+    },
+    {
+      "company_number": "810274042",
+      "status": "success",
+      "company_name": "ARNESEN EIENDOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.195,
+      "error_message": null
+    },
+    {
+      "company_number": "810324562",
+      "status": "success",
+      "company_name": "SERVI GROUP AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.19,
+      "error_message": null
+    },
+    {
+      "company_number": "810359862",
+      "status": "success",
+      "company_name": "AUTOBJØRN A/S",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.736,
+      "error_message": null
+    },
+    {
+      "company_number": "810363142",
+      "status": "success",
+      "company_name": "BJØRNSTJERNE BJØRNSONSGATE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 303.908,
+      "error_message": null
+    },
+    {
+      "company_number": "810392312",
+      "status": "success",
+      "company_name": "METALLCO AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.533,
+      "error_message": null
+    },
+    {
+      "company_number": "810393572",
+      "status": "success",
+      "company_name": "HALWA AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.297,
+      "error_message": null
+    },
+    {
+      "company_number": "810412402",
+      "status": "success",
+      "company_name": "STOREBRAND TILLERTORGET AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 370.722,
+      "error_message": null
+    },
+    {
+      "company_number": "810431172",
+      "status": "success",
+      "company_name": "AS SCAN-WOOD",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.379,
+      "error_message": null
+    },
+    {
+      "company_number": "810432322",
+      "status": "success",
+      "company_name": "BAUGE EIENDOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.978,
+      "error_message": null
+    },
+    {
+      "company_number": "810438452",
+      "status": "success",
+      "company_name": "BECKMANN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.757,
+      "error_message": null
+    },
+    {
+      "company_number": "810441682",
+      "status": "success",
+      "company_name": "FIDUCIA NORWAY AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.021,
+      "error_message": null
+    },
+    {
+      "company_number": "810463902",
+      "status": "success",
+      "company_name": "E BERENTSEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.529,
+      "error_message": null
+    },
+    {
+      "company_number": "810483822",
+      "status": "success",
+      "company_name": "FRIHOLMEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.548,
+      "error_message": null
+    },
+    {
+      "company_number": "810547472",
+      "status": "success",
+      "company_name": "SAFEROAD B. BERNTSEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.959,
+      "error_message": null
+    },
+    {
+      "company_number": "810574232",
+      "status": "success",
+      "company_name": "AS TROMSØ AUTOMOBILCOMPANI - AS TACO",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 592.494,
+      "error_message": null
+    },
+    {
+      "company_number": "810582332",
+      "status": "success",
+      "company_name": "SOM EIENDOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 613.786,
+      "error_message": null
+    },
+    {
+      "company_number": "810584742",
+      "status": "success",
+      "company_name": "SAUDA AUTO AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 638.382,
+      "error_message": null
+    },
+    {
+      "company_number": "810684402",
+      "status": "success",
+      "company_name": "BLOKKEN SKIPSVERFT EIENDOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 661.913,
+      "error_message": null
+    },
+    {
+      "company_number": "810703342",
+      "status": "success",
+      "company_name": "OCTOPUS EIENDOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 687.148,
+      "error_message": null
+    },
+    {
+      "company_number": "810733772",
+      "status": "success",
+      "company_name": "BORGE EIENDOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 714.808,
+      "error_message": null
+    },
+    {
+      "company_number": "810855762",
+      "status": "success",
+      "company_name": "AS CHR BRUN TORVET",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 744.674,
+      "error_message": null
+    },
+    {
+      "company_number": "810859482",
+      "status": "success",
+      "company_name": "BRUNSTAD AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 769.503,
+      "error_message": null
+    },
+    {
+      "company_number": "810876832",
+      "status": "success",
+      "company_name": "FINN BRYNILDSRUD & SØNNER AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.817,
+      "error_message": null
+    },
+    {
+      "company_number": "810894342",
+      "status": "success",
+      "company_name": "ODVAR BRÅTHEN RØRLEGGERFORRETNING AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 824.355,
+      "error_message": null
+    },
+    {
+      "company_number": "810902612",
+      "status": "success",
+      "company_name": "Bugge & Amundsen AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.767,
+      "error_message": null
+    },
+    {
+      "company_number": "810969652",
+      "status": "success",
+      "company_name": "DDB AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 887.667,
+      "error_message": null
+    },
+    {
+      "company_number": "811025542",
+      "status": "success",
+      "company_name": "CHEMI TEKNIK AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.174,
+      "error_message": null
+    },
+    {
+      "company_number": "811060402",
+      "status": "success",
+      "company_name": "BIRDIE1 AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 929.365,
+      "error_message": null
+    },
+    {
+      "company_number": "811102822",
+      "status": "success",
+      "company_name": "HAS INVESTMENT AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.264,
+      "error_message": null
+    },
+    {
+      "company_number": "811114642",
+      "status": "success",
+      "company_name": "JOHN DAHLE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.727,
+      "error_message": null
+    },
+    {
+      "company_number": "811141402",
+      "status": "success",
+      "company_name": "CARLA STUDIO AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1001.284,
+      "error_message": null
+    },
+    {
+      "company_number": "811162582",
+      "status": "success",
+      "company_name": "AS GISLE GAARD",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1024.378,
+      "error_message": null
+    },
+    {
+      "company_number": "811167452",
+      "status": "success",
+      "company_name": "AS DEN NATIONALE SCENE",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.95,
+      "error_message": null
+    },
+    {
+      "company_number": "811176702",
+      "status": "success",
+      "company_name": "SAS NORGE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.651,
+      "error_message": null
+    },
+    {
+      "company_number": "811235482",
+      "status": "success",
+      "company_name": "ARNE DULSRUD AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1098.536,
+      "error_message": null
+    },
+    {
+      "company_number": "811251682",
+      "status": "success",
+      "company_name": "DYSTHEDESIGN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1118.954,
+      "error_message": null
+    },
+    {
+      "company_number": "811280852",
+      "status": "success",
+      "company_name": "HOVLAND TREVAREFABRIKK AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.807,
+      "error_message": null
+    },
+    {
+      "company_number": "811320862",
+      "status": "success",
+      "company_name": "KLINGVIG AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1179.626,
+      "error_message": null
+    },
+    {
+      "company_number": "811349372",
+      "status": "success",
+      "company_name": "EIVIND EIVINDSON AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1201.625,
+      "error_message": null
+    },
+    {
+      "company_number": "811410012",
+      "status": "success",
+      "company_name": "PER ELLINGSEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1222.349,
+      "error_message": null
+    },
+    {
+      "company_number": "811413682",
+      "status": "success",
+      "company_name": "ELOPAK ASA",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.784,
+      "error_message": null
+    },
+    {
+      "company_number": "811451002",
+      "status": "success",
+      "company_name": "TEATERGATEN 16 AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1268.493,
+      "error_message": null
+    },
+    {
+      "company_number": "811480282",
+      "status": "success",
+      "company_name": "Edv Eriksen AS Stilmøbelverksted",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1298.002,
+      "error_message": null
+    },
+    {
+      "company_number": "811489972",
+      "status": "success",
+      "company_name": "HARALDSGATEN 168 AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1342.648,
+      "error_message": null
+    },
+    {
+      "company_number": "811546402",
+      "status": "success",
+      "company_name": "DELA AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.058,
+      "error_message": null
+    },
+    {
+      "company_number": "811546712",
+      "status": "success",
+      "company_name": "LENDING FISKERI AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1396.527,
+      "error_message": null
+    },
+    {
+      "company_number": "811546852",
+      "status": "success",
+      "company_name": "SAFEBASE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.915,
+      "error_message": null
+    },
+    {
+      "company_number": "811548022",
+      "status": "success",
+      "company_name": "FRØY REDERI AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.743,
+      "error_message": null
+    },
+    {
+      "company_number": "811548472",
+      "status": "success",
+      "company_name": "EDEFICE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1511.111,
+      "error_message": null
+    },
+    {
+      "company_number": "811548642",
+      "status": "success",
+      "company_name": "BUSY BUSY BIRD AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1543.574,
+      "error_message": null
+    },
+    {
+      "company_number": "811548812",
+      "status": "success",
+      "company_name": "RICH BAR AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1572.837,
+      "error_message": null
+    },
+    {
+      "company_number": "811550582",
+      "status": "success",
+      "company_name": "CAMPUS 4 AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1604.894,
+      "error_message": null
+    },
+    {
+      "company_number": "811557552",
+      "status": "success",
+      "company_name": "PROHANDEL AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1630.133,
+      "error_message": null
+    },
+    {
+      "company_number": "811563382",
+      "status": "success",
+      "company_name": "AKA TELECOM AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1676.237,
+      "error_message": null
+    },
+    {
+      "company_number": "811563722",
+      "status": "success",
+      "company_name": "HAUGLANDSHELLA BYGG AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1704.365,
+      "error_message": null
+    },
+    {
+      "company_number": "811564222",
+      "status": "success",
+      "company_name": "TORGHALLEN BODØ AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.803,
+      "error_message": null
+    },
+    {
+      "company_number": "811565032",
+      "status": "success",
+      "company_name": "BORGEN GRUPPEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1758.603,
+      "error_message": null
+    },
+    {
+      "company_number": "811572322",
+      "status": "success",
+      "company_name": "SJØKONGEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1785.677,
+      "error_message": null
+    },
+    {
+      "company_number": "811572802",
+      "status": "success",
+      "company_name": "SAMEIET THORLEIF HAUGS VEI",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1835.36,
+      "error_message": null
+    },
+    {
+      "company_number": "811573302",
+      "status": "success",
+      "company_name": "BARANSU AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1859.837,
+      "error_message": null
+    },
+    {
+      "company_number": "811576182",
+      "status": "success",
+      "company_name": "ENGLUND INVEST AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1882.6,
+      "error_message": null
+    },
+    {
+      "company_number": "811576972",
+      "status": "success",
+      "company_name": "KOMÉT TRAFIKKSKOLE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1897.877,
+      "error_message": null
+    },
+    {
+      "company_number": "811577022",
+      "status": "success",
+      "company_name": "ZIRQ CABLES AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1912.929,
+      "error_message": null
+    },
+    {
+      "company_number": "811577332",
+      "status": "success",
+      "company_name": "VIA FLAKOLL AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1927.075,
+      "error_message": null
+    },
+    {
+      "company_number": "811577472",
+      "status": "success",
+      "company_name": "AKTIVA HW13 AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1942.761,
+      "error_message": null
+    },
+    {
+      "company_number": "811577642",
+      "status": "success",
+      "company_name": "AK SHIPPING & CHARTERING AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1958.498,
+      "error_message": null
+    },
+    {
+      "company_number": "811577812",
+      "status": "success",
+      "company_name": "SKJE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1973.398,
+      "error_message": null
+    },
+    {
+      "company_number": "811578282",
+      "status": "success",
+      "company_name": "AARSTAD BYGG CONSULT AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 1988.725,
+      "error_message": null
+    },
+    {
+      "company_number": "811580082",
+      "status": "success",
+      "company_name": "BOB SAMDRIFT DA",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 2004.154,
+      "error_message": null
+    },
+    {
+      "company_number": "811580422",
+      "status": "success",
+      "company_name": "BITERUD AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 2019.237,
+      "error_message": null
+    },
+    {
+      "company_number": "811581232",
+      "status": "success",
+      "company_name": "GØRAN HANSEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.242,
+      "error_message": null
+    },
+    {
+      "company_number": "811583472",
+      "status": "success",
+      "company_name": "JORDALSBAKKEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.829,
+      "error_message": null
+    },
+    {
+      "company_number": "811584762",
+      "status": "success",
+      "company_name": "WTS RAIL AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.894,
+      "error_message": null
+    },
+    {
+      "company_number": "811585092",
+      "status": "success",
+      "company_name": "THETA DEVELOPMENT AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.625,
+      "error_message": null
+    },
+    {
+      "company_number": "811585572",
+      "status": "success",
+      "company_name": "SLETTEBAKK AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 13.194,
+      "error_message": null
+    },
+    {
+      "company_number": "811589292",
+      "status": "success",
+      "company_name": "WILLIAMSEN HOLDING AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.817,
+      "error_message": null
+    },
+    {
+      "company_number": "811592692",
+      "status": "success",
+      "company_name": "VERFTSGATA 28 AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.197,
+      "error_message": null
+    },
+    {
+      "company_number": "811593362",
+      "status": "success",
+      "company_name": "ALTERA INFRASTRUCTURE CREWING AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 10.866,
+      "error_message": null
+    },
+    {
+      "company_number": "811593672",
+      "status": "success",
+      "company_name": "FLYT FORLAG AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.048,
+      "error_message": null
+    },
+    {
+      "company_number": "811594172",
+      "status": "success",
+      "company_name": "ARNE HAUGLI AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.59,
+      "error_message": null
+    },
+    {
+      "company_number": "811597732",
+      "status": "success",
+      "company_name": "GREFSEN BOLIGSERVICE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.171,
+      "error_message": null
+    },
+    {
+      "company_number": "811598682",
+      "status": "success",
+      "company_name": "INOVI MUSIC AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 12.015,
+      "error_message": null
+    },
+    {
+      "company_number": "811598992",
+      "status": "success",
+      "company_name": "FAVORIT AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 13.453,
+      "error_message": null
+    },
+    {
+      "company_number": "811600202",
+      "status": "success",
+      "company_name": "STOREBOTN 17 AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.608,
+      "error_message": null
+    },
+    {
+      "company_number": "811600792",
+      "status": "success",
+      "company_name": "ELTERA AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.87,
+      "error_message": null
+    },
+    {
+      "company_number": "811604542",
+      "status": "success",
+      "company_name": "ALF AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.042,
+      "error_message": null
+    },
+    {
+      "company_number": "811605212",
+      "status": "success",
+      "company_name": "AA-TVERRELVA KRAFT AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 14.602,
+      "error_message": null
+    },
+    {
+      "company_number": "811605352",
+      "status": "success",
+      "company_name": "KLAUVA KRAFT AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.236,
+      "error_message": null
+    },
+    {
+      "company_number": "811607002",
+      "status": "success",
+      "company_name": "ACEA DEVELOPMENT AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 14.862,
+      "error_message": null
+    },
+    {
+      "company_number": "811608602",
+      "status": "success",
+      "company_name": "UNDERSTELLSERVICE AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 15.977,
+      "error_message": null
+    },
+    {
+      "company_number": "811610402",
+      "status": "success",
+      "company_name": "KATTNAKKEN AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 15.149,
+      "error_message": null
+    },
+    {
+      "company_number": "811613932",
+      "status": "success",
+      "company_name": "AXELAR AS",
+      "llm_usage": {
+        "configured_provider": "groq",
+        "provider_used": "groq",
+        "fallback_used": false,
+        "fallback_reason": null
+      },
+      "duration_seconds": 11.445,
+      "error_message": null
+    }
+  ],
+  "total_duration_seconds": 11.448
+}

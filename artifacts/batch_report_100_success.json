@@ -1,0 +1,14 @@
+{
+  "total_companies": 100,
+  "successful_companies": 100,
+  "groq_successful_companies": 100,
+  "llm_fallback_companies": 0,
+  "rate_limited_companies": 0,
+  "failed_companies": 0,
+  "total_duration_seconds": 11.448,
+  "average_duration_seconds": 607.692,
+  "failure_reasons": {},
+  "llm_provider_counts": {
+    "groq": 100
+  }
+}

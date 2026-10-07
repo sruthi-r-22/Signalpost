@@ -1,21 +1,32 @@
-# Signalpost 📡
+# Signalpost
 
-> **Autonomous Corporate Intelligence & Verification Agent for Norwegian Enterprises**
+Signalpost is an evidence-first Norwegian company intelligence agent. It accepts a Norwegian organization number, resolves the official identity through **Brønnøysundregistrene (Brreg / Enhetsregisteret)**, gathers supplementary public sources, extracts structured information, and assembles a profile with evidence and verification context. Research profiles and run history are persisted for later review.
 
-Signalpost is an agentic company research platform that accepts a Norwegian organization number, resolves official public registry ground-truth from **Brønnøysundregistrene (Enhetsregisteret)**, retrieves supplementary public web intelligence, extracts structured corporate facts using an isolated LLM service, rigorously cross-verifies claims to prevent hallucinations, tracks evidence citations with timestamps, and maintains an audit trail across re-research runs.
+## Quick Start
+
+From the repository root:
+
+```bash
+pip install -r requirements.txt
+```
+
+Copy `.env.example` to `.env`, then configure provider credentials as described below. Start the application with its simple entry point:
+
+```bash
+python run.py
+```
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) for the web interface or [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) for the API documentation. Configure provider credentials in `.env` for live Groq and Tavily research. Mock LLM and search providers are development/testing options; a Tavily configuration without a key uses DuckDuckGo instead.
 
 ---
 
 ## 1. Project Overview
 
-Norwegian companies are uniquely identified by a 9-digit organization number governed by the Modulo 11 checksum algorithm. Signalpost treats this organization number as the primary identity key.
+Norwegian companies are uniquely identified by a 9-digit organization number governed by the Modulo 11 checksum algorithm. Signalpost treats this organization number as the primary identity key and follows an evidence-first pipeline:
 
-Instead of guessing or blindly scraping websites:
-1. **Authoritative Baseline**: It first resolves the company via Norway's open Enhetsregisteret API for legal name, status, NACE codes, address, employees, foundation date, and registered leadership (CEO and Board).
-2. **Supplementary Public Discovery**: It discovers external sources and web updates through pluggable search providers (DuckDuckGo, Tavily, SerpAPI, or Mock).
-3. **Evidence-Grounded Extraction**: An isolated LLM layer extracts operational insights strictly constrained to retrieved evidence.
-4. **Identity Verification & Conflict Resolution**: A verification engine tests for identity mismatches, prioritizes official government records over third-party claims, flags discrepancies, and bounds confidence scores.
-5. **Freshness & Audit History**: Subsequent re-research runs detect modified, added, or unchanged facts, preserving historic evidence and logging diffs.
+**Norwegian organization number → validation → Brreg identity resolution → public-source research → structured extraction → verification and conflict handling → evidence-backed company profile → persistence and history.**
+
+The registry supplies the authoritative identity baseline. Public-source and LLM-derived claims are associated with evidence and subjected to validation and conflict handling; results should be reviewed rather than treated as guaranteed facts.
 
 ---
 
@@ -53,13 +64,9 @@ signalpost/
 │   ├── run_batch.py                # Standalone batch research runner
 │   └── test_companies.txt           # Example input list
 │
-├── tests/
-│   ├── test_validation.py          # Modulo 11 and format validation tests
-│   ├── test_resolver.py            # Enhetsregisteret parser tests
-│   ├── test_verifier.py            # Conflict resolution & confidence tests
-│   ├── test_evidence_and_db.py     # Evidence deduplication & database tests
-│   └── test_api.py                 # REST endpoint integration tests
+├── tests/                          # Pytest suite for services, API, and batch runner
 │
+├── run.py                          # Application entry point
 ├── .env.example                    # Template environment variables
 ├── requirements.txt                # Python dependencies
 └── README.md                       # Comprehensive project documentation
@@ -71,30 +78,26 @@ signalpost/
 
 - **Strict Norwegian Org Number Validation**: Validates 9 digits, strips extraneous characters, and enforces the standard Modulo 11 weighted checksum (`[3, 2, 7, 6, 5, 4, 3, 2]`).
 - **Free, Open Official Registry Resolution**: Directly queries Brønnøysundregistrene's Enhetsregisteret and Roller APIs without requiring external API keys.
-- **Evidence-First Architecture**: Every fact is linked to an exact source URL, retrieval timestamp, confidence rating, source type (`official_registry`, `company_website`, `public_search`), and quote.
-- **Zero Hallucination Guarantee**: If evidence is missing, fields remain explicitly `null` rather than manufactured.
-- **Pluggable LLM Integration**: Isolated LLM provider layer supporting OpenAI (GPT-4o / GPT-4o-mini), Google Gemini, Groq, OpenRouter, local Ollama, or deterministic Mock mode for offline zero-cost execution.
-- **Pluggable Search Providers**: Abstraction supporting Mock, DuckDuckGo, Tavily, and SerpAPI with automatic URL deduplication.
+- **Evidence-First Architecture**: Facts can be accompanied by source URLs, retrieval timestamps, confidence, source type, and supporting details; evidence validation and verification help assess the claims.
+- **Evidence-Grounded Extraction**: The LLM is instructed to use supplied sources, leave unsupported fields null, and cite source URLs. This reduces unsupported claims but is not a guarantee that every output is correct.
+- **LLM Integration**: The configured evaluation setup uses Groq with `openai/gpt-oss-120b`. Other supported providers are listed in the environment variables table; MockLLM is selectable for development/testing.
+- **Search Providers**: Tavily is the preferred configured live search provider. If selected without a nonblank `SEARCH_API_KEY`, Signalpost automatically uses DuckDuckGo; explicit DuckDuckGo operation also requires no search API key.
 - **Conflict Resolution Engine**: Detects conflicting claims across sources, downgrades suspicious third-party claims, preserves official registry ground truth, and outputs actionable discrepancy warnings.
 - **Refresh & Audit History**: Re-researching a company tracks changes field-by-field, logs `added`, `modified`, and `verified_unchanged` states, and preserves historic evidence.
 - **Fast Local Web UI**: Built-in dark-mode frontend served directly by FastAPI.
 
 ---
 
-## 4. Setup Instructions
+## 4. Setup and Configuration
 
 ### Prerequisites
-- Python 3.10+ (tested on Python 3.13)
+- Python 3.10+
 - Windows, macOS, or Linux
 
 ### Installation
 
-1. **Clone or navigate to the project directory**:
-   ```bash
-   cd Signalpost
-   ```
-
-2. **Create and activate a virtual environment (optional but recommended)**:
+1. Navigate to the repository root.
+2. (Optional) Create and activate a virtual environment:
    ```bash
    # Windows PowerShell
    python -m venv venv
@@ -104,22 +107,39 @@ signalpost/
    python -m venv venv
    source venv/bin/activate
    ```
-
-3. **Install dependencies**:
+3. Install the dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-
-4. **Setup environment variables**:
+4. Copy `.env.example` to `.env` and edit it with your provider settings:
    ```bash
+   # Windows PowerShell
+   Copy-Item .env.example .env
+
+   # Linux / macOS
    cp .env.example .env
    ```
 
----
+Keep API keys in `.env`; never commit real credentials. For the configured Groq evaluation setup, supply your own `LLM_API_KEY` and use:
+```ini
+LLM_PROVIDER=groq
+LLM_API_KEY=<your-groq-api-key>
+LLM_MODEL=openai/gpt-oss-120b
+LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_TEMPERATURE=0.0
+```
 
-## 5. Environment Variables
+Tavily is the preferred configured search provider. Supply your own key:
+```ini
+SEARCH_PROVIDER=tavily
+SEARCH_API_KEY=<your-tavily-api-key>
+```
 
-Configure options in `.env`:
+If `SEARCH_PROVIDER=tavily` and `SEARCH_API_KEY` is missing or blank, Signalpost selects DuckDuckGo automatically. DuckDuckGo can also be selected explicitly and needs no search API key. Brreg's public registry API does not require an API key. `LLM_PROVIDER=mock` explicitly selects MockLLM for development/testing.
+
+### Environment Variables
+
+Copy `.env.example` to `.env` as a starting point. The template defaults to Mock providers; set the Groq and Tavily values above for live evaluation. All credentials must be supplied through environment variables or `.env` and kept out of source control.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -128,56 +148,50 @@ Configure options in `.env`:
 | `PORT` | `8000` | Server binding port |
 | `DATABASE_PATH` | `signalpost.db` | Path to local SQLite database file |
 | `LLM_PROVIDER` | `mock` | LLM backend: `mock`, `openai`, `gemini`, `groq`, `openrouter`, `ollama` |
-| `LLM_API_KEY` | *(empty)* | API key for LLM provider (not needed for `mock`) |
-| `LLM_MODEL` | `gpt-4o-mini` | Model identifier (e.g. `gpt-4o-mini`, `gemini-1.5-flash`, `llama-3.1-70b-versatile`) |
+| `LLM_API_KEY` | *(empty)* | Provider credential; required for configured hosted LLMs such as Groq, not needed for MockLLM |
+| `LLM_MODEL` | `gpt-4o-mini` | Model identifier; the configured Groq model is `openai/gpt-oss-120b` |
 | `LLM_BASE_URL` | `https://api.openai.com/v1` | Base URL for OpenAI-compatible endpoints |
+| `LLM_TEMPERATURE` | `0.0` | LLM sampling temperature |
 | `SEARCH_PROVIDER` | `mock` | Search engine: `mock`, `duckduckgo`, `tavily`, `serpapi` |
-| `SEARCH_API_KEY` | *(empty)* | API key for search provider (not needed for `mock` or `duckduckgo`) |
+| `SEARCH_API_KEY` | *(empty)* | Tavily or SerpAPI credential; not needed for DuckDuckGo. Tavily with a missing/blank key falls back to DuckDuckGo |
 | `BRREG_API_BASE_URL`| `https://data.brreg.no/enhetsregisteret/api` | Official Norwegian Enhetsregisteret API |
 | `HTTP_TIMEOUT_SECONDS` | `15` | Default HTTP request timeout |
 
 ---
 
-## 6. How to Run Backend
+## 5. Running the Application
 
-Start the FastAPI application via Uvicorn:
+From the repository root, start the FastAPI application:
 
 ```bash
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python run.py
 ```
 
-The API will be available at:
-- **Interactive OpenAPI Docs (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- **ReDoc Documentation**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-- **Health Check Endpoint**: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+The interface is served at [http://127.0.0.1:8000](http://127.0.0.1:8000). Interactive API documentation is at `/docs`, ReDoc is at `/redoc`, and the health check is at `/health`. The server host and port are configurable through `.env`.
 
----
+### Web Interface
 
-## 7. How to Run Frontend
+The frontend is served by FastAPI at the root URL. Enter a valid Norwegian organization number or choose an example, then start research. The interface presents company identity, facts, evidence, confidence, and available conflict information. Use **Refresh** to research again and **Audit History** to review previous runs and field-level changes.
 
-The frontend is served directly by FastAPI at the root URL:
-
-Open your web browser and navigate to:
-👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
-
-From the web interface:
-1. Click any of the example chips (e.g., **Equinor ASA: 923609016**, **DNB Bank: 984851006**, **Kongsberg Gruppen: 943753709**, **Telenor: 982463718**) or enter any valid 9-digit Norwegian organization number.
-2. Click **Research Company**.
-3. View the verified identity card, key facts, executive leadership chips, evidence citations, and confidence scores.
-4. Click **Refresh** to execute a re-research freshness check.
-5. Click **Audit History** to view past research runs and field-level change history.
-
----
-
-## 8. Batch Research Runner
+## 6. Batch Research Runner
 
 Prepare a text file with one Norwegian organization number per line, or a CSV/JSON file containing organization numbers. From the project root, run:
 
 ```bash
-python scripts/run_batch.py --input companies.txt
+python scripts/run_batch.py --input companies.txt --output-dir artifacts/my-batch
 ```
 
-The runner calls the existing `ResearcherService` for each valid number and writes detailed results and a concise summary under `artifacts/`. Each result includes `llm_usage` metadata with the configured provider, provider actually used, whether MockLLMProvider fallback occurred, and the fallback reason. The report summarizes actual provider counts and fallback count. It runs at most three companies simultaneously by default. Set `MAX_CONCURRENCY` or pass `--max-concurrency` to change the limit. Transient failures receive one retry by default; invalid and not-found numbers are not retried.
+The runner calls `ResearcherService` for each supplied input and writes `batch_results.json` and `batch_report.json` under the output directory (`artifacts/` by default). It accepts evaluator-owned fresh company lists; no repository sample list is required. Supported formats are TXT (one number per line), CSV (a recognized organization-number column or numbers in the first column), and JSON (a list or an object containing `company_numbers`, `organization_numbers`, or `companies`).
+
+For example, from the project root:
+
+```bash
+python scripts/run_batch.py --input evaluator-companies.csv --output-dir artifacts/evaluator-run --max-concurrency 1 --stop-on-rate-limit
+```
+
+Each normally completed input produces one result record. Result statuses distinguish `success`, `invalid`, `not_found`, `failed`, and `rate_limited` where applicable. The default concurrency is one; use `--max-concurrency` or `MAX_CONCURRENCY` to change it. Batch-level retries for transient failures are configurable with `--retries` (default one, in addition to the initial attempt); invalid and not-found inputs are not retried.
+
+Groq HTTP 429 responses are retried by the LLM service with its existing retry/backoff behavior. If Groq remains rate-limited after those retries, that company is marked `rate_limited`, not reported as a successful MockLLM result. With `--stop-on-rate-limit`, the runner also marks work not yet started as rate-limited; without the flag, other companies continue.
 
 To validate and count inputs without making research requests or changing the database, run:
 
@@ -185,29 +199,36 @@ To validate and count inputs without making research requests or changing the da
 python scripts/run_batch.py --input companies.txt --dry-run
 ```
 
-`scripts/test_companies.txt` demonstrates the input format. Running it without `--dry-run` performs live research.
+`scripts/test_companies.txt` demonstrates the input format. Running any input without `--dry-run` performs research and may use the configured external services.
 
----
-
-## 9. How to Run Tests
-
-Run the complete automated test suite with pytest:
+Resume an interrupted run from its output directory. Genuine LLM results and explicitly configured MockLLM results are preserved; results produced through a fallback are eligible for re-research:
 
 ```bash
-pytest -v
+python scripts/run_batch.py --input companies.txt --output-dir artifacts/my-batch --resume
 ```
 
-The tests validate:
-- Norwegian organization number checksums and formatting
-- Brønnøysundregistrene response parsing and status mapping
-- Identity mismatch flagging and conflict resolution hierarchy
-- Evidence validation, URL protocol security, and database deduplication
-- End-to-end REST API flows (health, research, get, refresh, history, and error states)
-- Batch input parsing, per-company failure isolation, concurrency limits, and result files
+To stop processing remaining companies if Groq is rate-limited, add `--stop-on-rate-limit`:
+
+```bash
+python scripts/run_batch.py --input companies.txt --output-dir artifacts/my-batch --stop-on-rate-limit
+python scripts/run_batch.py --input companies.txt --output-dir artifacts/my-batch --resume --stop-on-rate-limit
+```
+
+Batch results and reports are incrementally written as companies complete. A halted run can therefore be resumed using the same input and output directory.
+
+## 7. Tests
+
+Run the complete suite:
+
+```bash
+pytest -q
+```
+
+The suite covers organization-number validation, registry parsing, provider behavior, structured extraction and citation handling, evidence and database behavior, identity verification and conflict resolution, API flows, batch parsing/progress/resume/rate-limit handling, and activity freshness. Latest verified full-suite result: **93 passed**.
 
 ---
 
-## 10. Example API Requests
+## 8. Example API Requests
 
 ### 1. Research a Company
 ```bash
@@ -238,9 +259,9 @@ curl -X GET "http://127.0.0.1:8000/api/companies?limit=10"
 
 ---
 
-## 11. Example Response
+## 9. Example Response
 
-`POST /api/research` response for **Equinor ASA (923609016)**:
+Illustrative `POST /api/research` response shape for **Equinor ASA (923609016)**; returned values depend on current registry and search data:
 
 ```json
 {
@@ -328,7 +349,7 @@ curl -X GET "http://127.0.0.1:8000/api/companies?limit=10"
 
 ---
 
-## 12. How the Research Pipeline Works
+## 10. How the Research Pipeline Works
 
 ```text
        Company Number (e.g. 923609016)
@@ -345,20 +366,20 @@ curl -X GET "http://127.0.0.1:8000/api/companies?limit=10"
                     │ Authoritative Identity, NACE, Employees, Roles, Capital
                     ▼
        ┌──────────────────────────┐
-       │     Source Discovery     │ <──> Multi-query search (DDG, Tavily, SerpAPI, Mock)
+       │     Source Discovery     │ <──> Multi-query search (Tavily or DuckDuckGo fallback)
        └──────────────────────────┘
                     │ Deduplicated candidate URLs & public snippets
                     ▼
        ┌──────────────────────────┐
        │   Fact Extraction (LLM)  │ <──> Constrained JSON extraction with citations
        └──────────────────────────┘
-                    │ Extracted facts & quotes
+                    │ Extracted facts & quotes, subject to validation
                     ▼
        ┌──────────────────────────┐
        │ Identity Verifier &      │ ──> Cross-checks org nr, legal name & domains
        │ Conflict Resolver        │ ──> Applies source hierarchy: Official Registry > Web
        └──────────────────────────┘
-                    │ Calibrated Confidence & Discrepancy Alerts
+                    │ Confidence indicators & discrepancy alerts for review
                     ▼
        ┌──────────────────────────┐
        │  Profile & Audit Engine  │ ──> Computes diffs (added / modified / unchanged)
@@ -375,32 +396,75 @@ curl -X GET "http://127.0.0.1:8000/api/companies?limit=10"
 
 ---
 
+## 11. Evidence and Reliability
+
+The configured Groq model is `openai/gpt-oss-120b`. Transient HTTP 429 responses are retried (two retries after the initial attempt) using the existing retry/backoff logic, including provider reset guidance when available and a 30-second maximum wait. If Groq continues returning 429, the rate-limit error propagates and the batch records that company as `rate_limited`; it is not turned into a successful MockLLM result. Use `LLM_PROVIDER=mock` to explicitly select MockLLM for development/testing. The existing fallback behavior for other provider failures remains distinct from this persistent-Groq-429 handling.
+
+For structured JSON validation/generation errors, the OpenAI-compatible provider has a separate single retry using prompt-guided JSON. Returned content is parsed and validated locally, and citation URLs are checked against supplied source documents; these checks do not guarantee factual correctness.
+
+Brreg resolution uses the configured `HTTP_TIMEOUT_SECONDS` and reports network and unexpected HTTP errors to the caller; a 404 is reported as not found. Tavily requests use a 15-second HTTPX timeout with connection establishment capped at 5 seconds. Search discovery catches individual provider/query failures and continues with other queries, so some supplementary sources may be absent. When Tavily is selected without a nonblank API key, search uses DuckDuckGo; Brreg resolution remains a separate earlier pipeline stage.
+
+Evidence records associate claims with source URLs and retrieval metadata. Verification checks identity and conflicting claims, prioritizes official registry information over web claims, and exposes discrepancies and confidence for review. Refresh runs compare changed facts and preserve research history and prior evidence for review. Unsupported or missing information is not guaranteed to be absent in every output; results require human review.
+
+## 12. Evaluator and Submission Notes
+
+The application separates registry resolution, provider-backed source discovery, structured extraction, verification/conflict resolution, and persistence. Live evaluation uses the public Enhetsregisteret API and configured Groq and search providers; Tavily is preferred, with automatic DuckDuckGo fallback if its key is missing or blank. Do not include API keys in a submission.
+
+Research responses and stored profiles expose facts, evidence, citations, conflicts, warnings, and confidence information. SQLite stores profiles and research history. Batch runs write `batch_results.json` and `batch_report.json` to the selected output directory and update those files incrementally. In a normally completed run, every supplied input has exactly one result record; statuses distinguish successes and applicable invalid, not-found, failed, or rate-limited inputs.
+
+Supply an evaluator-owned TXT, CSV, or JSON file containing fresh Norwegian organization numbers; repository sample lists are not required. For example:
+
+```bash
+python scripts/run_batch.py --input evaluator-owned-companies.csv --output-dir artifacts/evaluator-run --max-concurrency 1 --stop-on-rate-limit
+```
+
+If the run is interrupted, repeat it with `--resume` and the same input and output directory. Inspect both JSON output files for result statuses and provider usage.
+
 ## 13. Limitations
 
-1. **Sub-unit (underenheter) Resolution**: This MVP focuses on primary parent enterprise numbers (*hovedenheter*). Branch locations (*underenheter*, e.g., individual store locations) have separate 9-digit identifiers in Enhetsregisteret and can be resolved similarly, but parent-subsidiary trees are not automatically traversed.
-2. **Paid Financial Statements**: Basic share capital, number of shares, and latest filed annual accounts year are extracted directly from Enhetsregisteret for free. Detailed multi-year P&L balance sheet tables are behind paid registries (Proff Forvalt / Purehelp) or require PDF scraping of filed annual reports.
-3. **Public Search Rate Limits**: When using DuckDuckGo without an API key, excessive parallel requests may trigger temporary anti-bot throttling. For high-throughput automated batch processing, configure `SEARCH_PROVIDER=tavily` or `SEARCH_PROVIDER=serpapi`.
+- Live registry, Groq, and search-provider availability, quotas, latency, and rate limits affect live research. Tavily timeouts are bounded, and a failed search query may yield fewer supplementary web sources.
+- Missing evidence is reported as absent; Signalpost does not guarantee that every extracted or verified claim is correct.
+- The workflow resolves the supplied organization number and does not automatically traverse parent/subsidiary trees.
+- The registry provides selected financial metadata, not a complete multi-year financial statement analysis.
 
 ---
 
-## 14. How to Replace Search and LLM Providers
+## 14. Services and Evaluation Cost
+
+| Service | Use |
+|---|---|
+| Brønnøysundregistrene (Brreg / Enhetsregisteret) | Norwegian company identity and registry data |
+| Tavily | Preferred configured public-source search; DuckDuckGo is selected automatically if Tavily is configured without a key |
+| Groq (`openai/gpt-oss-120b`) | Structured extraction from supplied registry and public-source information |
+
+No exact expected evaluation cost is verified here. Calculate it from measured request and token usage for the evaluator-supplied batch before submission; do not infer a price from this documentation.
+
+---
+
+## 15. How to Replace Search and LLM Providers
 
 ### Switching Search Providers
 
-Signalpost uses a provider factory pattern in [app/services/search_service.py](file:///c:/Users/sruth/OneDrive/Desktop/Signalpost/app/services/search_service.py).
+Signalpost uses a provider factory pattern in [app/services/search_service.py](app/services/search_service.py).
 
-To switch to **Tavily**:
+To select **Tavily** (provide a key to use Tavily; without one, SearchService automatically selects DuckDuckGo):
 1. Add to `.env`:
    ```ini
    SEARCH_PROVIDER=tavily
-   SEARCH_API_KEY=tvly-your-key-here
+   SEARCH_API_KEY=<your-tavily-api-key>
    ```
+
+To explicitly use **DuckDuckGo** without a search API key:
+```ini
+SEARCH_PROVIDER=duckduckgo
+SEARCH_API_KEY=
+```
 
 To switch to **SerpAPI (Google Search)**:
 1. Add to `.env`:
    ```ini
    SEARCH_PROVIDER=serpapi
-   SEARCH_API_KEY=your-serpapi-key-here
+   SEARCH_API_KEY=<your-serpapi-api-key>
    ```
 
 To add a new custom search provider (e.g. Bing Search):
@@ -410,12 +474,12 @@ To add a new custom search provider (e.g. Bing Search):
 
 ### Switching LLM Providers
 
-Signalpost isolates LLM integration in [app/services/llm_service.py](file:///c:/Users/sruth/OneDrive/Desktop/Signalpost/app/services/llm_service.py).
+Signalpost isolates LLM integration in [app/services/llm_service.py](app/services/llm_service.py).
 
 To use **OpenAI (GPT-4o / GPT-4o-mini)**:
 ```ini
 LLM_PROVIDER=openai
-LLM_API_KEY=sk-proj-your-openai-key
+LLM_API_KEY=<your-provider-api-key>
 LLM_MODEL=gpt-4o-mini
 LLM_BASE_URL=https://api.openai.com/v1
 ```
@@ -423,19 +487,22 @@ LLM_BASE_URL=https://api.openai.com/v1
 To use **Google Gemini**:
 ```ini
 LLM_PROVIDER=gemini
-LLM_API_KEY=AIzaSy-your-gemini-key
+LLM_API_KEY=<your-provider-api-key>
 LLM_MODEL=gemini-1.5-flash
 ```
 
-To use **Groq (Fast Llama-3.1-70B)**:
+To use the tested **Groq** configuration:
 ```ini
 LLM_PROVIDER=groq
-LLM_API_KEY=gsk_your-groq-key
-LLM_MODEL=llama-3.1-70b-versatile
+LLM_API_KEY=<your-groq-api-key>
+LLM_MODEL=openai/gpt-oss-120b
 LLM_BASE_URL=https://api.groq.com/openai/v1
+LLM_TEMPERATURE=0.0
 ```
 
-To use **Local Ollama (100% Private Offline LLM)**:
+For local development/testing without a hosted LLM, explicitly set `LLM_PROVIDER=mock`. Persistent Groq HTTP 429 errors are reported as rate-limited rather than converted into MockLLM success.
+
+To use **Local Ollama**:
 ```ini
 LLM_PROVIDER=ollama
 LLM_API_KEY=ollama

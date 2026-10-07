@@ -5,6 +5,8 @@ import httpx
 import pytest
 
 from app.services.search_service import (
+    DuckDuckGoSearchProvider,
+    MockSearchProvider,
     SearchProviderError,
     SearchService,
     TavilySearchProvider,
@@ -28,6 +30,38 @@ class _TimeoutClient:
     async def post(self, url, *, json):
         self.post_calls += 1
         raise httpx.ConnectTimeout("simulated TLS connection timeout")
+
+
+def test_tavily_with_api_key_uses_tavily():
+    with patch("app.services.search_service.get_settings") as get_settings:
+        get_settings.return_value.SEARCH_PROVIDER = "tavily"
+        get_settings.return_value.SEARCH_API_KEY = "test-key"
+
+        service = SearchService()
+
+    assert isinstance(service.provider, TavilySearchProvider)
+
+
+@pytest.mark.parametrize("api_key", ["", "   "])
+def test_tavily_without_api_key_uses_duckduckgo_not_mock(api_key):
+    with patch("app.services.search_service.get_settings") as get_settings:
+        get_settings.return_value.SEARCH_PROVIDER = "tavily"
+        get_settings.return_value.SEARCH_API_KEY = api_key
+
+        service = SearchService()
+
+    assert isinstance(service.provider, DuckDuckGoSearchProvider)
+    assert not isinstance(service.provider, MockSearchProvider)
+
+
+def test_explicit_duckduckgo_provider_still_uses_duckduckgo():
+    with patch("app.services.search_service.get_settings") as get_settings:
+        get_settings.return_value.SEARCH_PROVIDER = "duckduckgo"
+        get_settings.return_value.SEARCH_API_KEY = ""
+
+        service = SearchService()
+
+    assert isinstance(service.provider, DuckDuckGoSearchProvider)
 
 
 def test_tavily_timeout_is_bounded_and_raised_as_search_provider_error():

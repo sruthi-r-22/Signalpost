@@ -268,6 +268,8 @@ class SearchService:
 
     def _init_provider(self) -> BaseSearchProvider:
         if self.provider_name == "tavily":
+            if not self.api_key.strip():
+                return DuckDuckGoSearchProvider()
             return TavilySearchProvider(self.api_key)
         elif self.provider_name == "serpapi":
             return SerpApiSearchProvider(self.api_key)

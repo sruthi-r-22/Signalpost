@@ -178,16 +178,10 @@ The frontend is served by FastAPI at the root URL. Enter a valid Norwegian organ
 Prepare a text file with one Norwegian organization number per line, or a CSV/JSON file containing organization numbers. From the project root, run:
 
 ```bash
-python scripts/run_batch.py --input companies.txt --output-dir artifacts/my-batch
+python scripts/run_batch.py --input <INPUT_FILE> --output-dir artifacts/evaluation
 ```
 
-The runner calls `ResearcherService` for each supplied input and writes `batch_results.json` and `batch_report.json` under the output directory (`artifacts/` by default). It accepts evaluator-owned fresh company lists; no repository sample list is required. Supported formats are TXT (one number per line), CSV (a recognized organization-number column or numbers in the first column), and JSON (a list or an object containing `company_numbers`, `organization_numbers`, or `companies`).
-
-For example, from the project root:
-
-```bash
-python scripts/run_batch.py --input evaluator-companies.csv --output-dir artifacts/evaluator-run --max-concurrency 1 --stop-on-rate-limit
-```
+Replace `<INPUT_FILE>` with the evaluator's own fresh TXT, CSV, or JSON file. The runner calls `ResearcherService` for each supplied input and writes `batch_results.json` and `batch_report.json` under the output directory (`artifacts/` by default). No repository sample list is required. Supported formats are TXT (one number per line), CSV (a recognized organization-number column or numbers in the first column), and JSON (a list or an object containing `company_numbers`, `organization_numbers`, or `companies`).
 
 Each normally completed input produces one result record. Result statuses distinguish `success`, `invalid`, `not_found`, `failed`, and `rate_limited` where applicable. The default concurrency is one; use `--max-concurrency` or `MAX_CONCURRENCY` to change it. Batch-level retries for transient failures are configurable with `--retries` (default one, in addition to the initial attempt); invalid and not-found inputs are not retried.
 
@@ -207,7 +201,7 @@ Resume an interrupted run from its output directory. Genuine LLM results and exp
 python scripts/run_batch.py --input companies.txt --output-dir artifacts/my-batch --resume
 ```
 
-To stop processing remaining companies if Groq is rate-limited, add `--stop-on-rate-limit`:
+As an optional development safeguard, `--stop-on-rate-limit` stops processing remaining companies if Groq is rate-limited:
 
 ```bash
 python scripts/run_batch.py --input companies.txt --output-dir artifacts/my-batch --stop-on-rate-limit
@@ -404,7 +398,7 @@ For structured JSON validation/generation errors, the OpenAI-compatible provider
 
 Brreg resolution uses the configured `HTTP_TIMEOUT_SECONDS` and reports network and unexpected HTTP errors to the caller; a 404 is reported as not found. Tavily requests use a 15-second HTTPX timeout with connection establishment capped at 5 seconds. Search discovery catches individual provider/query failures and continues with other queries, so some supplementary sources may be absent. When Tavily is selected without a nonblank API key, search uses DuckDuckGo; Brreg resolution remains a separate earlier pipeline stage.
 
-Evidence records associate claims with source URLs and retrieval metadata. Verification checks identity and conflicting claims, prioritizes official registry information over web claims, and exposes discrepancies and confidence for review. Refresh runs compare changed facts and preserve research history and prior evidence for review. Unsupported or missing information is not guaranteed to be absent in every output; results require human review.
+Evidence records associate claims with source URLs and retrieval metadata. Verification checks identity and conflicting claims, prioritizes official registry information over web claims, and exposes discrepancies and confidence for review. Refresh runs compare changed facts and preserve research history and prior evidence for review. Unsupported or missing information should remain null or unreported rather than be invented; results require human review, and these measures do not guarantee accuracy or eliminate hallucinations.
 
 ## 12. Evaluator and Submission Notes
 
@@ -412,18 +406,18 @@ The application separates registry resolution, provider-backed source discovery,
 
 Research responses and stored profiles expose facts, evidence, citations, conflicts, warnings, and confidence information. SQLite stores profiles and research history. Batch runs write `batch_results.json` and `batch_report.json` to the selected output directory and update those files incrementally. In a normally completed run, every supplied input has exactly one result record; statuses distinguish successes and applicable invalid, not-found, failed, or rate-limited inputs.
 
-Supply an evaluator-owned TXT, CSV, or JSON file containing fresh Norwegian organization numbers; repository sample lists are not required. For example:
-
-```bash
-python scripts/run_batch.py --input evaluator-owned-companies.csv --output-dir artifacts/evaluator-run --max-concurrency 1 --stop-on-rate-limit
-```
+Supply an evaluator-owned TXT, CSV, or JSON file containing fresh Norwegian organization numbers; repository sample lists are not required. The primary evaluator command is shown in Section 6.
 
 If the run is interrupted, repeat it with `--resume` and the same input and output directory. Inspect both JSON output files for result statuses and provider usage.
+
+### Existing 100-Company Local Smoke-Test Evidence
+
+The repository includes `artifacts/batch_report_100_success.json`, `artifacts/batch_results.json`, and the corresponding input list, `companies_100.txt`. This local smoke test processed 100 inputs: 100 successful, 0 failed, 0 rate-limited, 100 genuine Groq successes, and 0 MockLLM fallback successes. It is local smoke-test evidence, not the official competition evaluation.
 
 ## 13. Limitations
 
 - Live registry, Groq, and search-provider availability, quotas, latency, and rate limits affect live research. Tavily timeouts are bounded, and a failed search query may yield fewer supplementary web sources.
-- Missing evidence is reported as absent; Signalpost does not guarantee that every extracted or verified claim is correct.
+- Unsupported or missing information should remain null or unreported rather than be invented. Evidence and validation do not guarantee accuracy or eliminate hallucinations.
 - The workflow resolves the supplied organization number and does not automatically traverse parent/subsidiary trees.
 - The registry provides selected financial metadata, not a complete multi-year financial statement analysis.
 
@@ -437,7 +431,9 @@ If the run is interrupted, repeat it with `--resume` and the same input and outp
 | Tavily | Preferred configured public-source search; DuckDuckGo is selected automatically if Tavily is configured without a key |
 | Groq (`openai/gpt-oss-120b`) | Structured extraction from supplied registry and public-source information |
 
-No exact expected evaluation cost is verified here. Calculate it from measured request and token usage for the evaluator-supplied batch before submission; do not infer a price from this documentation.
+Using measured usage from 531 genuine Groq runs (188,646 input tokens and 143,028 output tokens) and reference rates of $0.15 per million input tokens and $0.60 per million output tokens, projected Groq costs are approximately **$0.022 for 100 companies** and **$0.215 for 1,000 companies**. These are projections based on measured usage, not guaranteed charges.
+
+Search-provider costs are separate and depend on actual Tavily requests/credits or use of DuckDuckGo. The combined Groq and search-provider cost is not known.
 
 ---
 

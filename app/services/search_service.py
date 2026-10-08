@@ -49,7 +49,10 @@ def is_meaningful_activity(text: str) -> bool:
 
 class SearchProviderError(Exception):
     """Raised when search provider encounters an error or is unconfigured."""
-    pass
+
+    def __init__(self, message: str, status_code: Optional[int] = None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class BaseSearchProvider(ABC):
@@ -156,13 +159,7 @@ class DuckDuckGoSearchProvider(BaseSearchProvider):
                                     provider="duckduckgo"
                                 ))
         except Exception:
-            # Fallback to mock if network blocks DDG scraping
-            mock = MockSearchProvider()
-            return await mock.search(query, max_results)
-
-        if not results:
-            mock = MockSearchProvider()
-            return await mock.search(query, max_results)
+            return []
 
         return results[:max_results]
 
@@ -195,7 +192,10 @@ class TavilySearchProvider(BaseSearchProvider):
             async with httpx.AsyncClient(timeout=timeout) as client:
                 resp = await client.post(url, json=payload)
                 if resp.status_code != 200:
-                    raise SearchProviderError(f"Tavily search failed with code {resp.status_code}: {resp.text}")
+                    raise SearchProviderError(
+                        f"Tavily search failed with code {resp.status_code}: {resp.text}",
+                        status_code=resp.status_code
+                    )
                 data = resp.json()
                 now = datetime.now(timezone.utc).isoformat()
                 results = []
@@ -278,6 +278,17 @@ class SearchService:
         else:
             return MockSearchProvider()
 
+    async def _search_with_fallback(self, query: str, max_results: int) -> List[SearchResult]:
+        try:
+            return await self.provider.search(query, max_results=max_results)
+        except SearchProviderError as exc:
+            if self.provider_name != "tavily" or exc.status_code != 432:
+                raise
+            try:
+                return await DuckDuckGoSearchProvider().search(query, max_results=max_results)
+            except Exception:
+                return []
+
     async def discover_company_sources(
         self,
         company_number: str,
@@ -307,7 +318,7 @@ class SearchService:
 
         for q in queries:
             try:
-                results = await self.provider.search(q, max_results=3)
+                results = await self._search_with_fallback(q, max_results=3)
                 for res in results:
                     canonical = res.url.rstrip("/").lower()
                     if canonical not in seen_urls and res.url.startswith("http"):
@@ -325,7 +336,7 @@ class SearchService:
                 f'acquisition investment leadership launch strategy after:{cutoff.isoformat()}'
             )
             try:
-                activity_results = await self.provider.search(query, max_results=5)
+                activity_results = await self._search_with_fallback(query, max_results=5)
             except Exception:
                 continue
 

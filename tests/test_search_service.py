@@ -32,6 +32,37 @@ class _TimeoutClient:
         raise httpx.ConnectTimeout("simulated TLS connection timeout")
 
 
+class _Response:
+    def __init__(self, status_code, text="", data=None):
+        self.status_code = status_code
+        self.text = text
+        self._data = data or {}
+
+    def json(self):
+        return self._data
+
+
+class _FallbackClient:
+    calls = []
+    ddg_response = None
+    tavily_status = 432
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        return False
+
+    async def post(self, url, **kwargs):
+        self.calls.append((url, kwargs))
+        if "api.tavily.com" in url:
+            return _Response(self.tavily_status, "simulated Tavily response")
+        return self.ddg_response
+
+
 def test_tavily_with_api_key_uses_tavily():
     with patch("app.services.search_service.get_settings") as get_settings:
         get_settings.return_value.SEARCH_PROVIDER = "tavily"
@@ -92,3 +123,71 @@ def test_search_service_safely_skips_timed_out_tavily_queries():
 
     assert results == []
     assert sum(client.post_calls for client in _TimeoutClient.instances) == 6
+
+
+def test_tavily_http_432_retries_query_with_duckduckgo_without_changing_provider():
+    _FallbackClient.calls.clear()
+    _FallbackClient.tavily_status = 432
+    _FallbackClient.ddg_response = _Response(
+        200,
+        """
+        <div class="result">
+          <a class="result__a" href="https://example.com/company">Company result</a>
+          <a class="result__snippet">A real search result.</a>
+        </div>
+        """
+    )
+    service = object.__new__(SearchService)
+    service.provider_name = "tavily"
+    service.provider = TavilySearchProvider("test-key")
+
+    with patch("app.services.search_service.httpx.AsyncClient", _FallbackClient):
+        results = asyncio.run(service._search_with_fallback("company query", max_results=3))
+
+    assert [result.url for result in results] == ["https://example.com/company"]
+    assert results[0].provider == "duckduckgo"
+    assert service.provider_name == "tavily"
+    assert isinstance(service.provider, TavilySearchProvider)
+    assert [call[0] for call in _FallbackClient.calls] == [
+        "https://api.tavily.com/search",
+        "https://html.duckduckgo.com/html/",
+    ]
+    assert _FallbackClient.calls[0][1]["json"]["query"] == "company query"
+    assert _FallbackClient.calls[1][1]["data"]["q"] == "company query"
+
+
+@pytest.mark.parametrize(
+    "ddg_response",
+    [
+        _Response(503, "simulated DuckDuckGo failure"),
+        _Response(200, "<html><body>No search results</body></html>"),
+    ],
+)
+def test_duckduckgo_failure_or_empty_results_returns_no_fabricated_sources(ddg_response):
+    _FallbackClient.calls.clear()
+    _FallbackClient.tavily_status = 432
+    _FallbackClient.ddg_response = ddg_response
+    service = object.__new__(SearchService)
+    service.provider_name = "tavily"
+    service.provider = TavilySearchProvider("test-key")
+
+    with patch("app.services.search_service.httpx.AsyncClient", _FallbackClient):
+        results = asyncio.run(service._search_with_fallback("company query", max_results=3))
+
+    assert results == []
+    assert len(_FallbackClient.calls) == 2
+
+
+def test_other_tavily_http_errors_do_not_fall_back_to_duckduckgo():
+    _FallbackClient.calls.clear()
+    _FallbackClient.tavily_status = 403
+    service = object.__new__(SearchService)
+    service.provider_name = "tavily"
+    service.provider = TavilySearchProvider("test-key")
+
+    with patch("app.services.search_service.httpx.AsyncClient", _FallbackClient):
+        with pytest.raises(SearchProviderError, match="code 403") as exc_info:
+            asyncio.run(service._search_with_fallback("company query", max_results=3))
+
+    assert exc_info.value.status_code == 403
+    assert len(_FallbackClient.calls) == 1

@@ -81,6 +81,7 @@ class CompanyResolver:
         """
         org_nr = validate_norwegian_org_number(company_number)
         url = f"{self.base_url}/enheter/{org_nr}"
+        roles_url = f"{url}/roller"
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
@@ -104,7 +105,6 @@ class CompanyResolver:
             # Attempt to fetch roles (CEO, board members)
             roles_data = None
             try:
-                roles_url = f"{self.base_url}/enheter/{org_nr}/roller"
                 roles_resp = await client.get(roles_url, headers={"Accept": "application/json"})
                 if roles_resp.status_code == 200:
                     roles_data = roles_resp.json()
@@ -112,14 +112,15 @@ class CompanyResolver:
                 # Roles are optional enrichment; non-fatal if unavailable
                 pass
 
-        return self._parse_registry_response(org_nr, data, roles_data, url)
+        return self._parse_registry_response(org_nr, data, roles_data, url, roles_url)
 
     def _parse_registry_response(
         self,
         org_nr: str,
         data: Dict[str, Any],
         roles_data: Optional[Dict[str, Any]],
-        source_url: str
+        source_url: str,
+        roles_source_url: Optional[str] = None
     ) -> Dict[str, Any]:
         """Extract typed models and baseline evidence from Enhetsregisteret JSON."""
         name = data.get("navn", f"Company {org_nr}").strip()
@@ -272,7 +273,7 @@ class CompanyResolver:
             evidence_list.append(Evidence(
                 field=field,
                 value=person.name,
-                source_url=source_url,
+                source_url=roles_source_url or source_url,
                 source_title=f"Brønnøysundregistrene (Enhetsregisteret) - {org_nr}",
                 source_type=SourceType.OFFICIAL_REGISTRY,
                 confidence=1.0,

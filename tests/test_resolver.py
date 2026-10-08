@@ -39,15 +39,31 @@ def test_parse_registry_response_active():
                 "roller": [
                     {"person": {"navn": {"fornavn": "Anders", "etternavn": "Opedal"}}}
                 ]
+            },
+            {
+                "type": {"kode": "STYR", "beskrivelse": "Styre"},
+                "roller": [
+                    {
+                        "type": {"beskrivelse": "Styreleder"},
+                        "person": {"navn": {"fornavn": "Chair", "etternavn": "Person"}}
+                    },
+                    {
+                        "type": {"beskrivelse": "Styremedlem"},
+                        "person": {"navn": {"fornavn": "Board", "etternavn": "Member"}}
+                    }
+                ]
             }
         ]
     }
+    registry_url = "https://data.brreg.no/enhetsregisteret/api/enheter/923609016"
+    roles_url = f"{registry_url}/roller"
 
     parsed = resolver._parse_registry_response(
         org_nr="923609016",
         data=raw_brreg_data,
         roles_data=raw_roles_data,
-        source_url="https://data.brreg.no/enhetsregisteret/api/enheter/923609016"
+        source_url=registry_url,
+        roles_source_url=roles_url
     )
 
     identity = parsed["identity"]
@@ -61,12 +77,25 @@ def test_parse_registry_response_active():
     assert parsed["industry_code"] == "06.100"
 
     # Management
-    assert len(parsed["management"]) == 1
+    assert len(parsed["management"]) == 3
     assert parsed["management"][0].name == "Anders Opedal"
     assert "CEO" in parsed["management"][0].role
-    ceo_evidence = [ev for ev in parsed["evidence_list"] if ev.field == "ceo"]
-    assert len(ceo_evidence) == 1
-    assert ceo_evidence[0].value == "Anders Opedal"
+    leadership_evidence = {
+        ev.field: ev for ev in parsed["evidence_list"]
+        if ev.field in {"ceo", "board_chair", "board_member"}
+    }
+    assert set(leadership_evidence) == {"ceo", "board_chair", "board_member"}
+    assert all(ev.source_url == roles_url for ev in leadership_evidence.values())
+    assert leadership_evidence["ceo"].value == "Anders Opedal"
+    assert leadership_evidence["board_chair"].value == "Chair Person"
+    assert leadership_evidence["board_member"].value == "Board Member"
+
+    ordinary_evidence = [
+        ev for ev in parsed["evidence_list"]
+        if ev.field in {"company_name", "registered_address", "employee_count", "industry"}
+    ]
+    assert ordinary_evidence
+    assert all(ev.source_url == registry_url for ev in ordinary_evidence)
 
     # Authoritative evidence count
     assert len(parsed["evidence_list"]) >= 8

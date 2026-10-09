@@ -81,7 +81,7 @@ signalpost/
 - **Evidence-First Architecture**: Facts can be accompanied by source URLs, retrieval timestamps, confidence, source type, and supporting details; evidence validation and verification help assess the claims.
 - **Evidence-Grounded Extraction**: The LLM is instructed to use supplied sources, leave unsupported fields null, and cite source URLs. This reduces unsupported claims but is not a guarantee that every output is correct.
 - **LLM Integration**: The configured evaluation setup uses Groq with `openai/gpt-oss-120b`. Other supported providers are listed in the environment variables table; MockLLM is selectable for development/testing.
-- **Search Providers**: Tavily is the preferred configured live search provider. If selected without a nonblank `SEARCH_API_KEY`, Signalpost automatically uses DuckDuckGo; explicit DuckDuckGo operation also requires no search API key.
+- **Search Providers**: Tavily is the preferred configured live search provider. If selected without a nonblank `SEARCH_API_KEY`, Signalpost automatically uses DuckDuckGo; explicit DuckDuckGo operation also requires no search API key. When Tavily returns HTTP 432 (usage limit exceeded), Signalpost retries that query with DuckDuckGo. This retry does not guarantee results; if DuckDuckGo fails or returns none, no MockSearch results are substituted as verified evidence.
 - **Conflict Resolution Engine**: Detects conflicting claims across sources, downgrades suspicious third-party claims, preserves official registry ground truth, and outputs actionable discrepancy warnings.
 - **Refresh & Audit History**: Re-researching a company tracks changes field-by-field, logs `added`, `modified`, and `verified_unchanged` states, and preserves historic evidence.
 - **Fast Local Web UI**: Built-in dark-mode frontend served directly by FastAPI.
@@ -218,7 +218,7 @@ Run the complete suite:
 pytest -q
 ```
 
-The suite covers organization-number validation, registry parsing, provider behavior, structured extraction and citation handling, evidence and database behavior, identity verification and conflict resolution, API flows, batch parsing/progress/resume/rate-limit handling, and activity freshness. Latest verified full-suite result: **93 passed**.
+The suite covers organization-number validation, registry parsing, provider behavior, structured extraction and citation handling, evidence and database behavior, identity verification and conflict resolution, API flows, batch parsing/progress/resume/rate-limit handling, and activity freshness. Latest verified full-suite result: **97 passed, 2 deprecation warnings**.
 
 ---
 
@@ -396,13 +396,13 @@ The configured Groq model is `openai/gpt-oss-120b`. Transient HTTP 429 responses
 
 For structured JSON validation/generation errors, the OpenAI-compatible provider has a separate single retry using prompt-guided JSON. Returned content is parsed and validated locally, and citation URLs are checked against supplied source documents; these checks do not guarantee factual correctness.
 
-Brreg resolution uses the configured `HTTP_TIMEOUT_SECONDS` and reports network and unexpected HTTP errors to the caller; a 404 is reported as not found. Tavily requests use a 15-second HTTPX timeout with connection establishment capped at 5 seconds. Search discovery catches individual provider/query failures and continues with other queries, so some supplementary sources may be absent. When Tavily is selected without a nonblank API key, search uses DuckDuckGo; Brreg resolution remains a separate earlier pipeline stage.
+Brreg resolution uses the configured `HTTP_TIMEOUT_SECONDS` and reports network and unexpected HTTP errors to the caller; a 404 is reported as not found. Tavily requests use a 15-second HTTPX timeout with connection establishment capped at 5 seconds. When Tavily returns HTTP 432 (usage limit exceeded), Signalpost retries the affected query using DuckDuckGo; other Tavily HTTP errors retain their existing error handling. When Tavily is configured without a nonblank API key, DuckDuckGo is selected from the outset. Search discovery catches individual provider/query failures and continues with other queries, so some supplementary sources may be absent. If DuckDuckGo fails or returns no results, that query contributes no results; Signalpost does not substitute fabricated MockSearch output as verified evidence. Fallback does not guarantee a successful search. Brreg resolution remains a separate earlier pipeline stage.
 
 Evidence records associate claims with source URLs and retrieval metadata. Verification checks identity and conflicting claims, prioritizes official registry information over web claims, and exposes discrepancies and confidence for review. Refresh runs compare changed facts and preserve research history and prior evidence for review. Unsupported or missing information should remain null or unreported rather than be invented; results require human review, and these measures do not guarantee accuracy or eliminate hallucinations.
 
 ## 12. Evaluator and Submission Notes
 
-The application separates registry resolution, provider-backed source discovery, structured extraction, verification/conflict resolution, and persistence. Live evaluation uses the public Enhetsregisteret API and configured Groq and search providers; Tavily is preferred, with automatic DuckDuckGo fallback if its key is missing or blank. Do not include API keys in a submission.
+The application separates registry resolution, provider-backed source discovery, structured extraction, verification/conflict resolution, and persistence. Live evaluation uses the public Enhetsregisteret API and configured Groq and search providers; Tavily is preferred, with DuckDuckGo selected if its key is missing or blank and a per-query DuckDuckGo retry if Tavily returns HTTP 432 (usage limit exceeded). The retry may still fail or return no results; in that case no MockSearch output is substituted as verified evidence. Do not include API keys in a submission.
 
 Research responses and stored profiles expose facts, evidence, citations, conflicts, warnings, and confidence information. SQLite stores profiles and research history. Batch runs write `batch_results.json` and `batch_report.json` to the selected output directory and update those files incrementally. In a normally completed run, every supplied input has exactly one result record; statuses distinguish successes and applicable invalid, not-found, failed, or rate-limited inputs.
 
@@ -416,7 +416,7 @@ The repository includes `artifacts/batch_report_100_success.json`, `artifacts/ba
 
 ## 13. Limitations
 
-- Live registry, Groq, and search-provider availability, quotas, latency, and rate limits affect live research. Tavily timeouts are bounded, and a failed search query may yield fewer supplementary web sources.
+- Live registry, Groq, and search-provider availability, quotas, latency, and rate limits affect live research. Tavily timeouts are bounded. HTTP 432 triggers a DuckDuckGo retry for that query, but fallback does not guarantee search results; DuckDuckGo failures or empty responses leave the query without results and may yield fewer supplementary web sources.
 - Unsupported or missing information should remain null or unreported rather than be invented. Evidence and validation do not guarantee accuracy or eliminate hallucinations.
 - The workflow resolves the supplied organization number and does not automatically traverse parent/subsidiary trees.
 - The registry provides selected financial metadata, not a complete multi-year financial statement analysis.
@@ -428,12 +428,16 @@ The repository includes `artifacts/batch_report_100_success.json`, `artifacts/ba
 | Service | Use |
 |---|---|
 | Brønnøysundregistrene (Brreg / Enhetsregisteret) | Norwegian company identity and registry data |
-| Tavily | Preferred configured public-source search; DuckDuckGo is selected automatically if Tavily is configured without a key |
+| Tavily | Preferred configured public-source search; DuckDuckGo is selected automatically if Tavily is configured without a key and retries a query after Tavily HTTP 432 (usage limit exceeded) |
 | Groq (`openai/gpt-oss-120b`) | Structured extraction from supplied registry and public-source information |
 
 Using measured usage from 531 genuine Groq runs (188,646 input tokens and 143,028 output tokens) and reference rates of $0.15 per million input tokens and $0.60 per million output tokens, projected Groq costs are approximately **$0.022 for 100 companies** and **$0.215 for 1,000 companies**. These are projections based on measured usage, not guaranteed charges.
 
 Search-provider costs are separate and depend on actual Tavily requests/credits or use of DuckDuckGo. The combined Groq and search-provider cost is not known.
+
+### Licences and Third-Party Services
+
+No `LICENSE` file or other explicit project-licence declaration is present in this repository, so the project's licence is unspecified. `requirements.txt` lists dependencies but does not declare their licences; check each dependency's authoritative package metadata before redistribution. The repository documents API usage for Brreg, Tavily, Groq, DuckDuckGo, and SerpAPI, but does not establish licence grants or service terms. Check the current authoritative terms and any applicable data-use conditions for each service rather than assuming a licence.
 
 ---
 
@@ -443,7 +447,7 @@ Search-provider costs are separate and depend on actual Tavily requests/credits 
 
 Signalpost uses a provider factory pattern in [app/services/search_service.py](app/services/search_service.py).
 
-To select **Tavily** (provide a key to use Tavily; without one, SearchService automatically selects DuckDuckGo):
+To select **Tavily** (provide a key to use Tavily; without one, SearchService automatically selects DuckDuckGo. A Tavily HTTP 432 response triggers a DuckDuckGo retry for that query, which may still return no results):
 1. Add to `.env`:
    ```ini
    SEARCH_PROVIDER=tavily
